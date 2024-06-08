@@ -103,7 +103,7 @@ func (u *User) Decrypt(versionKey *security.VersionKey) error {
 // Insert a User into the db.
 // Note that `u` is mutated inside the method but this
 // intentionally does not alter the calling instance,
-// hence the value reciever.
+// hence the value receiver.
 func (u User) Insert(
 	ctx context.Context,
 	conn *pgx.Conn,

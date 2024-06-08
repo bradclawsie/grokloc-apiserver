@@ -251,7 +251,7 @@ func RequireOneOf(levels ...AuthLevel) func(http.Handler) http.Handler {
 
 			if !satisfied {
 				logger := request.GetLogger(r)
-				logger.Debug("expected auth level not satisifed",
+				logger.Debug("expected auth level not satisfied",
 					"err", app.ErrorInadequateAuthorization)
 				http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
 				return

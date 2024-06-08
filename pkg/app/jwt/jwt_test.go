@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/grokloc/grokloc-go/pkg/app/models"
-	"github.com/grokloc/grokloc-go/pkg/security"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/security"
 )
 
 type JWTSuite struct {

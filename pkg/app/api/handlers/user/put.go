@@ -7,15 +7,15 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/grokloc/grokloc-go/pkg/app"
-	"github.com/grokloc/grokloc-go/pkg/app/admin/user"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/auth/withuser"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/body"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/request"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/withmodel"
-	"github.com/grokloc/grokloc-go/pkg/app/api/render"
-	"github.com/grokloc/grokloc-go/pkg/app/models"
-	"github.com/grokloc/grokloc-go/pkg/security"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/security"
 )
 
 func decodeToUpdateStatusEvent(body []byte, v *user.UpdateStatusEvent) bool {

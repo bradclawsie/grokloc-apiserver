@@ -10,16 +10,16 @@ tasks:
   - install-pkgs: |
       sudo pacman --noconfirm -S just fish postgresql git go gcc icu
   - grokloc-database: |
-      pushd /home/build/grokloc-go/database
+      pushd /home/build/grokloc-apiserver/database
       sudo just initdb
       sudo systemctl start postgresql.service && sleep 3
       just create-users create-databases alter-grants apply-schema
       popd
   - tools: |
-      cd /home/build/grokloc-go && just tools
+      cd /home/build/grokloc-apiserver && just tools
   - mod: |
-      cd /home/build/grokloc-go && just mod
+      cd /home/build/grokloc-apiserver && just mod
   - test: |
-      cd /home/build/grokloc-go && just test
+      cd /home/build/grokloc-apiserver && just test
   - lint: |
-      cd /home/build/grokloc-go && export PATH="~/go/bin:$PATH" && golangci-lint --timeout=24h run pkg/... && staticcheck ./... && go vet ./... && govulncheck ./...
+      cd /home/build/grokloc-apiserver && export PATH="~/go/bin:$PATH" && golangci-lint --timeout=24h run pkg/... && staticcheck ./... && go vet ./... && govulncheck ./...

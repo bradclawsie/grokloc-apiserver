@@ -9,12 +9,12 @@ import (
 	"net/url"
 
 	"github.com/google/uuid"
-	"github.com/grokloc/grokloc-go/pkg/app"
-	"github.com/grokloc/grokloc-go/pkg/app/admin/org"
-	"github.com/grokloc/grokloc-go/pkg/app/api/handlers/token"
-	"github.com/grokloc/grokloc-go/pkg/app/jwt"
-	"github.com/grokloc/grokloc-go/pkg/app/models"
-	app_testing "github.com/grokloc/grokloc-go/pkg/app/testing"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
 	"github.com/stretchr/testify/require"
 )
 

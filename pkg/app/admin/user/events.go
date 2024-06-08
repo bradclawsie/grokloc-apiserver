@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/grokloc/grokloc-go/pkg/app/models"
-	"github.com/grokloc/grokloc-go/pkg/safe"
-	"github.com/grokloc/grokloc-go/pkg/security"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/safe"
+	"github.com/grokloc/grokloc-apiserver/pkg/security"
 	"github.com/matthewhartstonge/argon2"
 )
 

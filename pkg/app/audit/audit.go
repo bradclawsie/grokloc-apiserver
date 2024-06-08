@@ -4,7 +4,7 @@ package audit
 import (
 	"context"
 
-	"github.com/grokloc/grokloc-go/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	"github.com/jackc/pgx/v5"
 )
 

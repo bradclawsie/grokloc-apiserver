@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/grokloc/grokloc-go/pkg/app"
-	"github.com/grokloc/grokloc-go/pkg/app/admin/user"
-	"github.com/grokloc/grokloc-go/pkg/app/models"
-	"github.com/grokloc/grokloc-go/pkg/app/state/unit"
-	"github.com/grokloc/grokloc-go/pkg/safe"
-	"github.com/grokloc/grokloc-go/pkg/security"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/state/unit"
+	"github.com/grokloc/grokloc-apiserver/pkg/safe"
+	"github.com/grokloc/grokloc-apiserver/pkg/security"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

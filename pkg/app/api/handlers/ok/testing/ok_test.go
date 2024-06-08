@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/grokloc/grokloc-go/pkg/app/api"
-	"github.com/grokloc/grokloc-go/pkg/app/state/unit"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/state/unit"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

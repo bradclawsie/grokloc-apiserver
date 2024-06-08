@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/grokloc/grokloc-go/pkg/app"
-	"github.com/grokloc/grokloc-go/pkg/app/admin/user"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/auth/withuser"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/body"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/request"
-	"github.com/grokloc/grokloc-go/pkg/app/api/render"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
 )
 
 func Post(st *app.State) http.HandlerFunc {

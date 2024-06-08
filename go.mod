@@ -1,4 +1,4 @@
-module github.com/grokloc/grokloc-go
+module github.com/grokloc/grokloc-apiserver
 
 go 1.22.4
 

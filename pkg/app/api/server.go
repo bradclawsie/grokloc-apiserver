@@ -2,7 +2,7 @@ package api
 
 import (
 	chi "github.com/go-chi/chi/v5"
-	"github.com/grokloc/grokloc-go/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
 )
 
 //const Version = "v0"

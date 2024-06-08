@@ -8,12 +8,12 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/grokloc/grokloc-go/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
 
-	"github.com/grokloc/grokloc-go/pkg/app/api"
-	"github.com/grokloc/grokloc-go/pkg/app/api/handlers/token"
-	"github.com/grokloc/grokloc-go/pkg/app/jwt"
-	"github.com/grokloc/grokloc-go/pkg/app/state/unit"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/state/unit"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

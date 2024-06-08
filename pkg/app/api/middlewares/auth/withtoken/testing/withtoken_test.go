@@ -10,20 +10,20 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/grokloc/grokloc-go/pkg/app"
-	"github.com/grokloc/grokloc-go/pkg/app/admin/org"
-	"github.com/grokloc/grokloc-go/pkg/app/admin/user"
-	"github.com/grokloc/grokloc-go/pkg/app/api/handlers/token"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/auth/withtoken"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/auth/withuser"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/request"
-	"github.com/grokloc/grokloc-go/pkg/app/jwt"
-	"github.com/grokloc/grokloc-go/pkg/app/models"
-	"github.com/grokloc/grokloc-go/pkg/app/state/unit"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withtoken"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/state/unit"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	app_testing "github.com/grokloc/grokloc-go/pkg/app/testing"
+	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
 )
 
 type WithTokenSuite struct {

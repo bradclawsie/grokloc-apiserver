@@ -2,16 +2,16 @@ package api
 
 import (
 	chi "github.com/go-chi/chi/v5"
-	"github.com/grokloc/grokloc-go/pkg/app"
-	"github.com/grokloc/grokloc-go/pkg/app/api/handlers/ok"
-	"github.com/grokloc/grokloc-go/pkg/app/api/handlers/org"
-	"github.com/grokloc/grokloc-go/pkg/app/api/handlers/token"
-	"github.com/grokloc/grokloc-go/pkg/app/api/handlers/user"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/auth/withtoken"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/auth/withuser"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/body"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/request"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/withmodel"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/ok"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/org"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/user"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withtoken"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
 	"github.com/rs/cors"
 )
 

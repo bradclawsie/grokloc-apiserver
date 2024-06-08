@@ -8,14 +8,14 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/grokloc/grokloc-go/pkg/app"
-	"github.com/grokloc/grokloc-go/pkg/app/admin/user"
-	"github.com/grokloc/grokloc-go/pkg/app/api/handlers/token"
-	"github.com/grokloc/grokloc-go/pkg/app/jwt"
-	"github.com/grokloc/grokloc-go/pkg/app/models"
-	app_testing "github.com/grokloc/grokloc-go/pkg/app/testing"
-	"github.com/grokloc/grokloc-go/pkg/safe"
-	"github.com/grokloc/grokloc-go/pkg/security"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
+	"github.com/grokloc/grokloc-apiserver/pkg/safe"
+	"github.com/grokloc/grokloc-apiserver/pkg/security"
 	"github.com/stretchr/testify/require"
 )
 

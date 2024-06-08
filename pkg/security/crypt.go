@@ -9,7 +9,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/grokloc/grokloc-go/pkg/safe"
+	"github.com/grokloc/grokloc-apiserver/pkg/safe"
 	"github.com/matthewhartstonge/argon2"
 )
 

@@ -4,12 +4,12 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/grokloc/grokloc-go/pkg/app"
-	"github.com/grokloc/grokloc-go/pkg/app/admin/user"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/auth/withuser"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/request"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/withmodel"
-	"github.com/grokloc/grokloc-go/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 )
 
 // Delete updates a user to have status inactive.

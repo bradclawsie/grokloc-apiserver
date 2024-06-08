@@ -4,14 +4,14 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/grokloc/grokloc-go/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
 
-	"github.com/grokloc/grokloc-go/pkg/app/admin/org"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/auth/withuser"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/request"
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/withmodel"
-	"github.com/grokloc/grokloc-go/pkg/app/api/render"
-	"github.com/grokloc/grokloc-go/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 )
 
 func Get(st *app.State) http.HandlerFunc {

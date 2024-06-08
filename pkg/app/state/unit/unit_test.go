@@ -5,7 +5,7 @@ import (
 	"log"
 	"testing"
 
-	"github.com/grokloc/grokloc-go/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

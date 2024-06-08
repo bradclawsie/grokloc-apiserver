@@ -4,7 +4,7 @@ package ok
 import (
 	"net/http"
 
-	"github.com/grokloc/grokloc-go/pkg/app/api/middlewares/request"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
 )
 
 // Get provides an unauthenticated ping service.

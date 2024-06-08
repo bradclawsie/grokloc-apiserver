@@ -7,8 +7,8 @@ import (
 	"time"
 
 	go_jwt "github.com/golang-jwt/jwt/v5"
-	"github.com/grokloc/grokloc-go/pkg/app/models"
-	"github.com/grokloc/grokloc-go/pkg/security"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/security"
 )
 
 // Expiration is offset from current time.

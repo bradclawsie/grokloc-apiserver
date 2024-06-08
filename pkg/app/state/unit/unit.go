@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/grokloc/grokloc-go/pkg/app"
-	"github.com/grokloc/grokloc-go/pkg/app/admin/org"
-	"github.com/grokloc/grokloc-go/pkg/app/models"
-	"github.com/grokloc/grokloc-go/pkg/env"
-	"github.com/grokloc/grokloc-go/pkg/safe"
-	"github.com/grokloc/grokloc-go/pkg/security"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/env"
+	"github.com/grokloc/grokloc-apiserver/pkg/safe"
+	"github.com/grokloc/grokloc-apiserver/pkg/security"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matthewhartstonge/argon2"
 )

@@ -2,8 +2,8 @@
 package org
 
 import (
-	"github.com/grokloc/grokloc-go/pkg/app/models"
-	"github.com/grokloc/grokloc-go/pkg/safe"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/safe"
 )
 
 // Org models a row of the orgs table.

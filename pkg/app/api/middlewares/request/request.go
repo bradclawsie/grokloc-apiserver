@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/grokloc/grokloc-go/pkg/app"
+	"github.com/grokloc/grokloc-apiserver/pkg/app"
 )
 
 type IDType string

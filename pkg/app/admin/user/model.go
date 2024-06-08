@@ -3,8 +3,8 @@ package user
 
 import (
 	"github.com/google/uuid"
-	"github.com/grokloc/grokloc-go/pkg/app/models"
-	"github.com/grokloc/grokloc-go/pkg/safe"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/safe"
 )
 
 // User models a row of the users table.

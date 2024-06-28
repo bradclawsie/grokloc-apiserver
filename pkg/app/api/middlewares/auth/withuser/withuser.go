@@ -50,7 +50,10 @@ func newAuthLevel(authLevel int) (AuthLevel, error) {
 	}
 }
 
-// Middleware checks user and org for the incoming request.
+// Middleware checks user and org for the incoming request,
+// as indicated by the x-grokloc-id header.
+// Following this middleware, the caller's user and org
+// info are available from the request context.
 func Middleware(st *app.State) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
@@ -187,76 +190,4 @@ func GetAuth(r *http.Request) AuthLevel {
 		panic("invalid auth level used")
 	}
 	return l
-}
-
-// GetUserScopedauth determines if the auth level for request r
-// satisfies access for some entity owned by user u.
-// Root can do anything.
-// If org owner, then must own org that u is part of.
-// If user, then must be u (i.e. yourself).
-func GetUserScopedAuth(r *http.Request, u *user.User) AuthLevel {
-	auth := GetAuth(r)
-	if auth == AuthRoot {
-		return auth
-	}
-	if auth == AuthOrg && GetOrg(r).ID == u.Org {
-		// caller is org owner for u
-		return auth
-	}
-	if auth == AuthUser && GetUser(r).ID == u.ID {
-		// caller is the same regular user as u
-		return auth
-	}
-	return AuthNone
-}
-
-// GetOrgScopedauth determines if the auth level for request r
-// satisfies access for some entity owned by user.
-// Root can do anything.
-// If org owner, then must own org that is o.
-func GetOrgScopedAuth(r *http.Request, o *org.Org) AuthLevel {
-	auth := GetAuth(r)
-	if auth == AuthRoot {
-		return auth
-	}
-	if auth == AuthOrg && GetOrg(r).ID == o.ID {
-		return auth
-	}
-	return AuthNone
-}
-
-// RequireOneOf is a convenience middleware to allow
-// short-circuiting if expected auth levels are not satisfied.
-// Assumes request.Middleware and withuser.Middleware.
-func RequireOneOf(levels ...AuthLevel) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			if len(levels) == 0 {
-				panic("no expected auth levels provided")
-			}
-
-			satisfied := false
-			auth := GetAuth(r)
-
-			if auth != AuthNone {
-				for _, level := range levels {
-					if int(auth) == int(level) {
-						satisfied = true
-						break
-					}
-				}
-			}
-
-			if !satisfied {
-				logger := request.GetLogger(r)
-				logger.Debug("expected auth level not satisfied",
-					"err", app.ErrorInadequateAuthorization)
-				http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
-				return
-			}
-
-			next.ServeHTTP(w, r)
-		}
-		return http.HandlerFunc(fn)
-	}
 }

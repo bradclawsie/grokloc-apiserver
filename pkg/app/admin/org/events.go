@@ -12,12 +12,13 @@ import (
 )
 
 type CreateEvent struct {
-	Name             safe.VarChar   `json:"name"`
-	OwnerDisplayName safe.VarChar   `json:"owner_display_name"`
-	OwnerEmail       safe.VarChar   `json:"owner_email"`
-	OwnerPassword    safe.Password  `json:"owner_password"`
-	Role             models.Role    `json:"role"`
-	argon2Config     *argon2.Config `json:"-"`
+	Name             safe.VarChar  `json:"name"`
+	OwnerDisplayName safe.VarChar  `json:"owner_display_name"`
+	OwnerEmail       safe.VarChar  `json:"owner_email"`
+	OwnerPassword    safe.Password `json:"owner_password"`
+	Role             models.Role   `json:"role"`
+	// argon2Config is modified internally, not for use by external callers
+	argon2Config *argon2.Config `json:"-"`
 }
 
 func NewCreateEvent(argon2Config *argon2.Config) (*CreateEvent, error) {
@@ -35,6 +36,8 @@ func (ev CreateEvent) isEmpty() bool {
 		ev.Role.IsEmpty()
 }
 
+// UnmarshalJSON assumes OwnerPassword is cleartext and hashes it with argon2.
+// This minimizes the window to access the cleartext password accidentally.
 func (ev *CreateEvent) UnmarshalJSON(bs []byte) error {
 	if ev.argon2Config == nil {
 		panic("missing argon2 config")
@@ -62,9 +65,9 @@ func (ev *CreateEvent) UnmarshalJSON(bs []byte) error {
 }
 
 type UpdateOwnerEvent struct {
-	Owner models.ID `json:"new_owner"`
+	Owner models.ID `json:"owner"`
 }
 
 type UpdateStatusEvent struct {
-	Status models.Status `json:"new_status"`
+	Status models.Status `json:"status"`
 }

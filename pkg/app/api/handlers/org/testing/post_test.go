@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -15,9 +14,7 @@ import (
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
-	"github.com/grokloc/grokloc-apiserver/pkg/app/api/handlers/token"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
-	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,7 +28,7 @@ func (s *OrgSuite) TestPostAsRoot() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
@@ -73,34 +70,6 @@ func (s *OrgSuite) TestPostAsRoot() {
 
 // TestPostAsOrgOwner demonstrates that org owner auth cannot create an org.
 func (s *OrgSuite) TestPostAsOrgOwner() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-	_, owner, _, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), oErr)
-
-	// make token request for org owner
-	tokenReqUrl, tokenReqUrlErr := url.Parse(s.srv.URL + "/token")
-	require.NoError(s.T(), tokenReqUrlErr)
-	ownerTokenRequest := jwt.EncodeTokenRequest(owner.ID, owner.APISecret.String())
-	ownerReq := http.Request{
-		URL:    tokenReqUrl,
-		Method: http.MethodPost,
-		Header: map[string][]string{
-			app.IDHeader:           {owner.ID.String()},
-			app.TokenRequestHeader: {ownerTokenRequest},
-		},
-	}
-	resp, postErr := s.c.Do(&ownerReq)
-	require.NoError(s.T(), postErr)
-	defer resp.Body.Close()
-	body, readErr := io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	var ownerTok token.JSONToken
-	umErr := json.Unmarshal(body, &ownerTok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), ownerTok.Token)
-	// have owner attempt to create an org
 	ev := org.CreateEvent{
 		Name:             safe.TrustedVarChar(security.RandString()),
 		OwnerDisplayName: safe.TrustedVarChar(security.RandString()),
@@ -110,45 +79,19 @@ func (s *OrgSuite) TestPostAsOrgOwner() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, owner.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
-	resp, postErr = s.c.Do(req)
+	req.Header.Add(app.IDHeader, s.owner.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.ownerTok.Token))
+	resp, postErr := s.c.Do(req)
 	require.NoError(s.T(), postErr)
 	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
 }
 
 // TestPostAsRegularUser demonstrates that user auth cannot create an org.
 func (s *OrgSuite) TestPostAsRegularUser() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-	_, _, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), oErr)
-	tokenReqUrl, tokenReqUrlErr := url.Parse(s.srv.URL + "/token")
-	require.NoError(s.T(), tokenReqUrlErr)
-	regularUserTokenRequest := jwt.EncodeTokenRequest(regularUser.ID, regularUser.APISecret.String())
-	regularUserReq := http.Request{
-		URL:    tokenReqUrl,
-		Method: http.MethodPost,
-		Header: map[string][]string{
-			app.IDHeader:           {regularUser.ID.String()},
-			app.TokenRequestHeader: {regularUserTokenRequest},
-		},
-	}
-	resp, postErr := s.c.Do(&regularUserReq)
-	require.NoError(s.T(), postErr)
-	defer resp.Body.Close()
-	body, readErr := io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	var regularUserTok token.JSONToken
-	umErr := json.Unmarshal(body, &regularUserTok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), regularUserTok.Token)
-
 	ev := org.CreateEvent{
 		Name:             safe.TrustedVarChar(security.RandString()),
 		OwnerDisplayName: safe.TrustedVarChar(security.RandString()),
@@ -158,13 +101,13 @@ func (s *OrgSuite) TestPostAsRegularUser() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, regularUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(regularUserTok.Token))
-	resp, postErr = s.c.Do(req)
+	req.Header.Add(app.IDHeader, s.regularUser.ID.String())
+	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.regularUserTok.Token))
+	resp, postErr := s.c.Do(req)
 	require.NoError(s.T(), postErr)
 	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
 }
@@ -204,7 +147,7 @@ func (s *OrgSuite) TestPostMalformedCreateEvent() {
 	for _, ev := range evs {
 		bs, bsErr := json.Marshal(ev)
 		require.NoError(s.T(), bsErr)
-		u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+		u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org")
 		require.NoError(s.T(), urlErr)
 		req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 		require.NoError(s.T(), reqErr)
@@ -217,7 +160,7 @@ func (s *OrgSuite) TestPostMalformedCreateEvent() {
 }
 
 func (s *OrgSuite) TestPostNoMatchingEvent() {
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org")
 	require.NoError(s.T(), urlErr)
 
 	// make up a type that does not match any event
@@ -247,7 +190,7 @@ func (s *OrgSuite) TestPostConflict() {
 	}
 	bs, bsErr := json.Marshal(ev)
 	require.NoError(s.T(), bsErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/org")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodPost, u.String(), bytes.NewBuffer(bs))
 	require.NoError(s.T(), reqErr)

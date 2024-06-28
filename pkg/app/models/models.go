@@ -12,6 +12,25 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// WithID indicates a model has a retrievable ID.
+type WithID interface {
+	GetID() ID
+}
+
+// WithOrg indicates a model has a retrievable Org ID.
+type WithOrg interface {
+	GetOrg() ID
+}
+
+// Kind is a symbol for a model kind.
+type Kind int64
+
+const (
+	KindNone = Kind(0)
+	KindOrg  = Kind(1)
+	KindUser = Kind(2)
+)
+
 // Role describes the context of a model row.
 // Role is an int64 when stored in the db.
 type Role int64

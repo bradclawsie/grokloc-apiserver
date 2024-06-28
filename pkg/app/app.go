@@ -8,13 +8,11 @@ import (
 const (
 	PostgresAppUrlEnvKey = "POSTGRES_APP_URL"
 	RepositoryBaseEnvKey = "REPOSITORY_BASE"
-)
-
-const (
-	AuthorizationHeader = "Authorization"
-	IDHeader            = "X-GrokLOC-ID"
-	TokenRequestHeader  = "X-GrokLOC-Token-Request"
-	MaxBodySize         = 8192
+	AuthorizationHeader  = "authorization"
+	IDHeader             = "x-grokloc-id"
+	TokenRequestHeader   = "x-grokloc-token-request"
+	MaxBodySize          = 8192
+	APIPath              = "/api/"
 )
 
 var ErrorEnvVar = errors.New("missing or malformed environment variable")

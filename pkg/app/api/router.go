@@ -12,6 +12,7 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	"github.com/rs/cors"
 )
 
@@ -33,8 +34,9 @@ func NewRouter(st *app.State) *chi.Mux {
 	})
 
 	// versioned api routes
+
 	// all require user+token validation
-	rtr.Route("/api/"+st.APIVersion, func(rtr chi.Router) {
+	rtr.Route(app.APIPath+st.APIVersion, func(rtr chi.Router) {
 		rtr.Use(withuser.Middleware(st))
 		rtr.Use(withtoken.Middleware(st))
 
@@ -43,41 +45,29 @@ func NewRouter(st *app.State) *chi.Mux {
 
 		// org related
 		rtr.Route("/org", func(rtr chi.Router) {
-			rtr.With(withuser.RequireOneOf(
-				withuser.AuthRoot,
-			)).
-				With(body.Middleware()).
+			rtr.With(body.Middleware()).
 				Post("/", org.Post(st))
 
 			rtr.Route("/{id}", func(rtr chi.Router) {
-				rtr.Use(withmodel.Middleware())
+				rtr.Use(withmodel.Middleware(st, models.KindOrg))
 				rtr.Get("/", org.Get(st))
-
-				rtr.Group(func(rtr chi.Router) {
-					rtr.Use(withuser.RequireOneOf(withuser.AuthRoot))
-					rtr.With(body.Middleware()).Put("/", org.Put(st))
-					rtr.Delete("/", org.Delete(st))
-				})
+				rtr.Delete("/", org.Delete(st))
+				rtr.With(body.Middleware()).
+					Put("/", org.Put(st))
 			})
 		})
 
 		// user related
 		rtr.Route("/user", func(rtr chi.Router) {
-			rtr.With(withuser.RequireOneOf(
-				withuser.AuthRoot,
-				withuser.AuthOrg,
-			)).
-				With(body.Middleware()).
+			rtr.With(body.Middleware()).
 				Post("/", user.Post(st))
 
 			rtr.Route("/{id}", func(rtr chi.Router) {
-				rtr.Use(withmodel.Middleware())
-
-				// Get, Put, Delete handlers call GetScopedAuth
-				// to assert access
+				rtr.Use(withmodel.Middleware(st, models.KindUser))
 				rtr.Get("/", user.Get(st))
 				rtr.Delete("/", user.Delete(st))
-				rtr.With(body.Middleware()).Put("/", user.Put(st))
+				rtr.With(body.Middleware()).
+					Put("/", user.Put(st))
 			})
 		})
 	})

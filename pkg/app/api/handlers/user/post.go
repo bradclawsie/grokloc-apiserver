@@ -37,13 +37,14 @@ func Post(st *app.State) http.HandlerFunc {
 		// if auth was org owner, then org ID must match org
 		// provided in event
 		// (had to decode body above to test this)
-		if withuser.GetAuth(r) == withuser.AuthOrg {
-			if ev.Org != withuser.GetOrg(r).ID {
-				logger.Debug("org owner mismatch with caller org",
-					"err", app.ErrorInadequateAuthorization)
-				http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
-				return
-			}
+		auth := withuser.GetAuth(r)
+		authOK := auth == withuser.AuthRoot ||
+			auth == withuser.AuthOrg && ev.Org == withuser.GetOrg(r).GetID()
+		if !authOK {
+			logger.Debug("expected auth level not satisfied",
+				"err", app.ErrorInadequateAuthorization)
+			http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
+			return
 		}
 
 		acquireCtx, acquireCancel := context.WithTimeout(context.Background(), st.ConnTimeout)
@@ -79,7 +80,7 @@ func Post(st *app.State) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Location", "/api/"+st.APIVersion+"/user/"+u.ID.String())
+		w.Header().Set("location", app.APIPath+st.APIVersion+"/user/"+u.ID.String())
 		w.WriteHeader(http.StatusCreated)
 		render.JSON(w, logger, u)
 	}

@@ -65,6 +65,7 @@ func (s *WithTokenSuite) TestValidAuth() {
 	}
 	resp, postErr := s.c.Do(&regularUserReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
@@ -73,7 +74,7 @@ func (s *WithTokenSuite) TestValidAuth() {
 	require.NoError(s.T(), umErr)
 	require.NotEmpty(s.T(), regularUserTok.Token)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/ok")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/ok")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -85,7 +86,7 @@ func (s *WithTokenSuite) TestValidAuth() {
 }
 
 func (s *WithTokenSuite) TestMissingToken() {
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/ok")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/ok")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -110,6 +111,7 @@ func (s *WithTokenSuite) TestWrongID() {
 	}
 	resp, postErr := s.c.Do(&regularUserReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
@@ -118,7 +120,7 @@ func (s *WithTokenSuite) TestWrongID() {
 	require.NoError(s.T(), umErr)
 	require.NotEmpty(s.T(), regularUserTok.Token)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/ok")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/ok")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -143,6 +145,7 @@ func (s *WithTokenSuite) TestWrongAPISecret() {
 	}
 	resp, postErr := s.c.Do(&regularUserReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
@@ -159,7 +162,7 @@ func (s *WithTokenSuite) TestWrongAPISecret() {
 	updateErr := s.regularUser.UpdateAPISecret(context.Background(), conn.Conn(), s.st.VersionKey)
 	require.NoError(s.T(), updateErr)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/ok")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/ok")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -184,6 +187,7 @@ func (s *WithTokenSuite) TestBadToken() {
 	}
 	resp, postErr := s.c.Do(&regularUserReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
@@ -192,7 +196,7 @@ func (s *WithTokenSuite) TestBadToken() {
 	require.NoError(s.T(), umErr)
 	require.NotEmpty(s.T(), regularUserTok.Token)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/ok")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/ok")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)
@@ -216,7 +220,7 @@ func (s *WithTokenSuite) TestExpiredToken() {
 	regularUserToken, tokenErr := tok.SignedString(s.st.SigningKey)
 	require.NoError(s.T(), tokenErr)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/ok")
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/ok")
 	require.NoError(s.T(), urlErr)
 	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
 	require.NoError(s.T(), reqErr)

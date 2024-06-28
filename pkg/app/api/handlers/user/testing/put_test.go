@@ -25,7 +25,7 @@ func (s *UserSuite) TestPutAsRoot() {
 	defer conn.Release()
 	_, _, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
 	require.NoError(s.T(), oErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + regularUser.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + regularUser.ID.String())
 	require.NoError(s.T(), urlErr)
 
 	// update api secret
@@ -105,6 +105,7 @@ func (s *UserSuite) TestPutAsRoot() {
 }
 
 func (s *UserSuite) TestPutAsOrgOwner() {
+	// create new org, regularUser to test these updates
 	conn, connErr := s.st.Master.Acquire(context.Background())
 	require.NoError(s.T(), connErr)
 	defer conn.Release()
@@ -125,6 +126,7 @@ func (s *UserSuite) TestPutAsOrgOwner() {
 	}
 	resp, postErr := s.c.Do(&ownerReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), resp.StatusCode, http.StatusOK)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
@@ -133,7 +135,7 @@ func (s *UserSuite) TestPutAsOrgOwner() {
 	require.NoError(s.T(), umErr)
 	require.NotEmpty(s.T(), ownerTok.Token)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + regularUser.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + regularUser.ID.String())
 	require.NoError(s.T(), urlErr)
 
 	// update api secret
@@ -212,7 +214,7 @@ func (s *UserSuite) TestPutAsOrgOwner() {
 	require.NotEqual(s.T(), previousAPISecret, uRead.APISecret)
 
 	// try to put to a user (root) that org owner has no permission to access
-	u, urlErr = url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + s.st.Root.ID.String())
+	u, urlErr = url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + s.st.Root.ID.String())
 	require.NoError(s.T(), urlErr)
 	evUpdateAPISecret = user.UpdateAPISecretEvent{
 		GenerateAPISecret: true,
@@ -229,6 +231,7 @@ func (s *UserSuite) TestPutAsOrgOwner() {
 }
 
 func (s *UserSuite) TestPutAsRegularUser() {
+	// create new regularUser to test these updates
 	conn, connErr := s.st.Master.Acquire(context.Background())
 	require.NoError(s.T(), connErr)
 	defer conn.Release()
@@ -247,6 +250,7 @@ func (s *UserSuite) TestPutAsRegularUser() {
 	}
 	resp, postErr := s.c.Do(&regularUserReq)
 	require.NoError(s.T(), postErr)
+	require.Equal(s.T(), resp.StatusCode, http.StatusOK)
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
 	require.NoError(s.T(), readErr)
@@ -255,7 +259,7 @@ func (s *UserSuite) TestPutAsRegularUser() {
 	require.NoError(s.T(), umErr)
 	require.NotEmpty(s.T(), regularUserTok.Token)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + regularUser.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + regularUser.ID.String())
 	require.NoError(s.T(), urlErr)
 
 	// update status - user cannot change their own status
@@ -374,7 +378,7 @@ func (s *UserSuite) TestPutAsRegularUser() {
 	require.True(s.T(), match)
 
 	// try to put to a user (root) that regular user has no permission to access
-	u, urlErr = url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + s.st.Root.ID.String())
+	u, urlErr = url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + s.st.Root.ID.String())
 	require.NoError(s.T(), urlErr)
 	evUpdateAPISecret = user.UpdateAPISecretEvent{
 		GenerateAPISecret: true,
@@ -391,7 +395,7 @@ func (s *UserSuite) TestPutAsRegularUser() {
 }
 
 func (s *UserSuite) TestPutNotFound() {
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + models.NewID().String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + models.NewID().String())
 	require.NoError(s.T(), urlErr)
 	evUpdateAPISecret := user.UpdateAPISecretEvent{
 		GenerateAPISecret: true,
@@ -413,7 +417,7 @@ func (s *UserSuite) TestPutMalformedUpdateEvents() {
 	defer conn.Release()
 	_, _, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
 	require.NoError(s.T(), oErr)
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + regularUser.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + regularUser.ID.String())
 	require.NoError(s.T(), urlErr)
 
 	// bad api secret update
@@ -503,7 +507,7 @@ func (s *UserSuite) TestPutNoMatchingEvent() {
 	_, _, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), s.st)
 	require.NoError(s.T(), oErr)
 
-	u, urlErr := url.Parse(s.srv.URL + "/api/" + s.st.APIVersion + "/user/" + regularUser.ID.String())
+	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/user/" + regularUser.ID.String())
 	require.NoError(s.T(), urlErr)
 
 	// make up a type that does not match any event

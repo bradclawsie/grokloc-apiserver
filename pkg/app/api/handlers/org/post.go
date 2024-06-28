@@ -7,17 +7,23 @@ import (
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
+	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 )
 
-// Post creates an org.
-// Post assumes both withuser and withtoken middlewares.
 func Post(st *app.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := request.GetLogger(r)
+
+		if withuser.GetAuth(r) != withuser.AuthRoot {
+			logger.Debug("expected auth level not satisfied",
+				"err", app.ErrorInadequateAuthorization)
+			http.Error(w, app.ErrorInadequateAuthorization.Error(), http.StatusForbidden)
+			return
+		}
 
 		ev, evErr := org.NewCreateEvent(&st.Argon2Config)
 		if evErr != nil {
@@ -69,7 +75,7 @@ func Post(st *app.State) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Location", "/api/"+st.APIVersion+"/org/"+o.ID.String())
+		w.Header().Set("location", app.APIPath+st.APIVersion+"/org/"+o.ID.String())
 		w.WriteHeader(http.StatusCreated)
 		render.JSON(w, logger, o)
 	}

@@ -41,8 +41,8 @@ create table if not exists repositories (
 -- our columns
 name text not null check (name != ''),
 org uuid not null,
+owner uuid not null,
 path text not null check (path != ''),
-upstream text not null check (path != ''),
 -- model base
 id uuid unique not null,
 schema_version bigint not null default 0 check (schema_version >= 0 and schema_version <= 99999),
@@ -54,7 +54,7 @@ role bigint not null check (role > 0 and role < 4),
 -- attributes
 primary key (id));
 
-create unique index if not exists repositories_name_org on repositories (name, org);
+create unique index if not exists repositories_name_owner on repositories (name, owner);
 
 create table if not exists audit (
 -- our columns

@@ -136,7 +136,7 @@ func Read(
       	where id = $1
       	`
 
-	selectErr := conn.QueryRow(ctx, selectQuery, id.String()).
+	selectErr := conn.QueryRow(ctx, selectQuery, id).
 		Scan(&o.Name,
 			&o.Owner,
 			&o.Meta.Ctime,

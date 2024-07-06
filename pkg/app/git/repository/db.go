@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/grokloc/grokloc-apiserver/pkg/app/audit"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	"github.com/grokloc/grokloc-apiserver/pkg/safe"
 	"github.com/jackc/pgx/v5"
@@ -56,9 +57,25 @@ func Create(
 	r.Meta.Status = models.StatusActive
 	r.Meta.SchemaVersion = SchemaVersion
 
-	insertErr := r.Insert(ctx, conn)
+	tx, txErr := conn.Begin(ctx)
+	if txErr != nil {
+		return nil, txErr
+	}
+	defer tx.Rollback(ctx) // nolint:errcheck
+
+	insertErr := r.Insert(ctx, tx.Conn())
 	if insertErr != nil {
 		return nil, insertErr
+	}
+
+	commitErr := tx.Commit(ctx)
+	if commitErr != nil {
+		return nil, commitErr
+	}
+
+	auditErr := audit.Insert(ctx, tx.Conn(), audit.RepositoryInsert, "repositories", r.ID)
+	if auditErr != nil {
+		return nil, auditErr
 	}
 
 	return Read(ctx, conn, r.ID)

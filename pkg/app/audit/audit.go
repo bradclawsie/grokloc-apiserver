@@ -9,14 +9,16 @@ import (
 )
 
 const (
-	Status          = 10
-	OrgInsert       = 100
-	OrgOwner        = 101
-	UserInsert      = 200
-	UserDisplayName = 201
-	UserPassword    = 202
-	UserReEncrypt   = 203
-	UserAPISecret   = 204
+	Status           = 10
+	OrgInsert        = 100
+	OrgOwner         = 101
+	UserInsert       = 200
+	UserDisplayName  = 201
+	UserPassword     = 202
+	UserReEncrypt    = 203
+	UserAPISecret    = 204
+	RepositoryInsert = 300
+	RepositoryDelete = 301
 )
 
 func Insert(

@@ -106,6 +106,11 @@ func Create(
 		return nil, nil, ownerReadErr
 	}
 
+	auditErr := audit.Insert(ctx, tx.Conn(), audit.OrgInsert, "orgs", o.ID)
+	if auditErr != nil {
+		return nil, nil, auditErr
+	}
+
 	commitErr := tx.Commit(ctx)
 	if commitErr != nil {
 		return nil, nil, commitErr

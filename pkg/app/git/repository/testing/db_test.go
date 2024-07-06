@@ -51,9 +51,9 @@ func (s *DBSuite) TestInsertRead() {
 	rRead, readErr := repository.Read(context.Background(), conn.Conn(), r.ID)
 	require.NoError(s.T(), readErr)
 	require.Equal(s.T(), r.ID, rRead.ID)
+	require.Equal(s.T(), r.Name, rRead.Name)
 	require.Equal(s.T(), r.Org, rRead.Org)
 	require.Equal(s.T(), r.Owner, rRead.Owner)
-	require.Equal(s.T(), r.Org, rRead.Org)
 	require.Equal(s.T(), r.Path, rRead.Path)
 	require.Equal(s.T(), r.Meta.Role, rRead.Meta.Role)
 	require.Equal(s.T(), r.Meta.Status, rRead.Meta.Status)
@@ -70,6 +70,26 @@ func (s *DBSuite) TestReadMissing() {
 
 	_, readErr := repository.Read(context.Background(), conn.Conn(), models.NewID())
 	require.Equal(s.T(), models.ErrNotFound, readErr)
+}
+
+func (s *DBSuite) TestCreate() {
+	conn, connErr := s.st.Master.Acquire(context.Background())
+	require.NoError(s.T(), connErr)
+	defer conn.Release()
+
+	name := safe.TrustedVarChar(security.RandString())
+	org := models.NewID()
+	owner := models.NewID()
+	path := "/"
+
+	r, createErr := repository.Create(context.Background(), conn.Conn(), name, org, owner, path, models.RoleTest)
+	require.NoError(s.T(), createErr)
+
+	require.Equal(s.T(), r.Name, name)
+	require.Equal(s.T(), r.Org, org)
+	require.Equal(s.T(), r.Owner, owner)
+	require.Equal(s.T(), r.Path, path)
+	require.Equal(s.T(), r.Meta.Role, models.RoleTest)
 }
 
 func (s *DBSuite) TearDownSuite() {

@@ -1,4 +1,3 @@
-// Package testing breaks an import loop for org
 package testing
 
 import (

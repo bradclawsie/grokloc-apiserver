@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
+	"github.com/grokloc/grokloc-apiserver/pkg/safe"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -38,6 +39,29 @@ func (r *Repository) Insert(ctx context.Context, conn *pgx.Conn) error {
 	}
 
 	return nil
+}
+
+func Create(
+	ctx context.Context,
+	conn *pgx.Conn,
+	name safe.VarChar,
+	org models.ID,
+	owner models.ID,
+	path string,
+	role models.Role,
+) (*Repository, error) {
+	r := &Repository{Name: name, Org: org, Owner: owner, Path: path}
+	r.ID = models.NewID()
+	r.Meta.Role = role
+	r.Meta.Status = models.StatusActive
+	r.Meta.SchemaVersion = SchemaVersion
+
+	insertErr := r.Insert(ctx, conn)
+	if insertErr != nil {
+		return nil, insertErr
+	}
+
+	return Read(ctx, conn, r.ID)
 }
 
 func Read(

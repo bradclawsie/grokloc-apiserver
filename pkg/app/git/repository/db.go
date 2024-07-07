@@ -68,14 +68,14 @@ func Create(
 		return nil, insertErr
 	}
 
-	commitErr := tx.Commit(ctx)
-	if commitErr != nil {
-		return nil, commitErr
-	}
-
 	auditErr := audit.Insert(ctx, tx.Conn(), audit.RepositoryInsert, "repositories", r.ID)
 	if auditErr != nil {
 		return nil, auditErr
+	}
+
+	commitErr := tx.Commit(ctx)
+	if commitErr != nil {
+		return nil, commitErr
 	}
 
 	return Read(ctx, conn, r.ID)
@@ -136,4 +136,40 @@ func Read(
 	r.ID = id
 
 	return &r, nil
+}
+
+// Delete actually delete a row - unlike other models that merely leave
+// a row as not active. Since a repositories row represents a real git
+// repository that can be deleted, the row should be deleted also.
+func Delete(
+	ctx context.Context,
+	conn *pgx.Conn,
+	id models.ID,
+) error {
+	const deleteQuery = `
+			delete from repositories where id = $1
+		`
+
+	tx, txErr := conn.Begin(ctx)
+	if txErr != nil {
+		return txErr
+	}
+	defer tx.Rollback(ctx) // nolint:errcheck
+
+	result, err := conn.Exec(ctx, deleteQuery, id)
+	if err != nil {
+		return err
+	}
+
+	deleted := result.RowsAffected()
+	if deleted != 1 {
+		return models.ErrRowsAffected
+	}
+
+	auditErr := audit.Insert(ctx, tx.Conn(), audit.RepositoryDelete, "repositories", id)
+	if auditErr != nil {
+		return auditErr
+	}
+
+	return tx.Commit(ctx)
 }

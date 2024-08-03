@@ -138,7 +138,7 @@ func Read(
 	return &r, nil
 }
 
-// Delete actually delete a row - unlike other models that merely leave
+// Delete actually deletes a row - unlike other models that merely leave
 // a row as not active. Since a repositories row represents a real git
 // repository that can be deleted, the row should be deleted also.
 func Delete(

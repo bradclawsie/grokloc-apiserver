@@ -92,6 +92,24 @@ func (s *DBSuite) TestCreate() {
 	require.Equal(s.T(), r.Meta.Role, models.RoleTest)
 }
 
+func (s *DBSuite) TestDelete() {
+	conn, connErr := s.st.Master.Acquire(context.Background())
+	require.NoError(s.T(), connErr)
+	defer conn.Release()
+
+	name := safe.TrustedVarChar(security.RandString())
+	org := models.NewID()
+	owner := models.NewID()
+	path := "/"
+
+	r, createErr := repository.Create(context.Background(), conn.Conn(), name, org, owner, path, models.RoleTest)
+	require.NoError(s.T(), createErr)
+	require.NoError(s.T(), repository.Delete(context.Background(), conn.Conn(), r.ID))
+	_, readErr := repository.Read(context.Background(), conn.Conn(), r.ID)
+	require.Error(s.T(), readErr)
+	require.Equal(s.T(), models.ErrNotFound, readErr)
+}
+
 func (s *DBSuite) TearDownSuite() {
 	_ = s.st.Close()
 }

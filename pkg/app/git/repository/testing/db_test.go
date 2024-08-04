@@ -110,6 +110,16 @@ func (s *DBSuite) TestDelete() {
 	require.Equal(s.T(), models.ErrNotFound, readErr)
 }
 
+func (s *DBSuite) TestDeleteMissing() {
+	conn, connErr := s.st.Master.Acquire(context.Background())
+	require.NoError(s.T(), connErr)
+	defer conn.Release()
+
+	deleteErr := repository.Delete(context.Background(), conn.Conn(), models.NewID())
+	require.Error(s.T(), deleteErr)
+	require.Equal(s.T(), models.ErrRowsAffected, deleteErr)
+}
+
 func (s *DBSuite) TearDownSuite() {
 	_ = s.st.Close()
 }

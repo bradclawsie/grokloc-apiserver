@@ -27,13 +27,19 @@ type WithUser interface {
 	GetUser() ID
 }
 
+// WithRepository indicates a models has a retrievable RepositoryID.
+type WithReposity interface {
+	GetRepository() ID
+}
+
 // Kind is a symbol for a model kind.
 type Kind int64
 
 const (
-	KindNone = Kind(0)
-	KindOrg  = Kind(1)
-	KindUser = Kind(2)
+	KindNone       = Kind(0)
+	KindOrg        = Kind(1)
+	KindUser       = Kind(2)
+	KindRepository = Kind(3)
 )
 
 // Role describes the context of a model row.

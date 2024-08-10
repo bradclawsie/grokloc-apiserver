@@ -31,10 +31,6 @@ func (s *DBSuite) SetupSuite() {
 	}
 }
 
-func (s *DBSuite) TearDownSuite() {
-	_ = s.st.Close()
-}
-
 func (s *DBSuite) TestEncrypted() {
 	keyVersion, key, keyErr := s.st.VersionKey.GetCurrent()
 	require.NoError(s.T(), keyErr)
@@ -321,6 +317,10 @@ func (s *DBSuite) TestUpdateStatus() {
 
 	require.Equal(s.T(), models.StatusInactive, u.Meta.Status)
 	require.NotEqual(s.T(), priorMeta.Signature, u.Meta.Signature)
+}
+
+func (s *DBSuite) TearDownSuite() {
+	_ = s.st.Close()
 }
 
 func TestDBSuite(t *testing.T) {

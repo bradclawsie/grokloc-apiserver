@@ -1,4 +1,3 @@
-// Package testing breaks an import loop for org
 package testing
 
 import (
@@ -29,10 +28,6 @@ func (s *DBSuite) SetupSuite() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-}
-
-func (s *DBSuite) TearDownSuite() {
-	_ = s.st.Close()
 }
 
 func (s *DBSuite) TestInsertRead() {
@@ -214,6 +209,10 @@ func (s *DBSuite) TestUpdateOwner() {
 	// u is not a user in other, so this fails
 	ownerUpdateErr = other.UpdateOwner(context.Background(), conn.Conn(), u.ID)
 	require.Equal(s.T(), models.ErrRelatedUser, ownerUpdateErr)
+}
+
+func (s *DBSuite) TearDownSuite() {
+	_ = s.st.Close()
 }
 
 func TestDBSuite(t *testing.T) {

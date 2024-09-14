@@ -4,7 +4,6 @@ on: push
 
 env:
   GROKLOC_ENV: UNIT
-  POSTGRES_APP_URL: postgres://grokloc:grokloc@db:5432/app
 
 jobs:
   ci:

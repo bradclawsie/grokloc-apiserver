@@ -13,7 +13,7 @@ jobs:
       PGDATABASE: app
       PGUSERNAME: grokloc
       PGPASSWORD: grokloc
-      POSTGRES_APP_URL: 'postgres://grokloc:grokloc@localhost:5432/app'
+      POSTGRES_APP_URL: postgres://grokloc:grokloc@localhost:5432/app
       REPOSITORY_BASE: /tmp
     steps:
       - uses: actions/checkout@v4

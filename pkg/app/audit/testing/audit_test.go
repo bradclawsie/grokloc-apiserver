@@ -23,7 +23,7 @@ func (s *AuditSuite) SetupSuite() {
 	var err error
 	s.st, err = unit.State()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 }
 

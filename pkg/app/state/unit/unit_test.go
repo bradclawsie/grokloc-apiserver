@@ -19,7 +19,7 @@ func (s *UnitSuite) SetupSuite() {
 	var err error
 	s.st, err = State()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 }
 

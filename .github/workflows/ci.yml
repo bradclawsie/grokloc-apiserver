@@ -29,13 +29,15 @@ jobs:
           sudo apt update
       - name: install deps
         run: |
-          sudo apt install -y just fish
+          sudo apt install -y just fish git
       - name: initialize db
         run: |
-          pushd database
           sudo systemctl start postgresql.service && sleep 3
+          git clone https://github.com/grokloc/grokloc-db.git 
+          pushd grokloc-db
           just create-users create-databases alter-grants apply-schema
           popd
+          rm -rf grokloc-db
       - name: tools
         run: |
           just tools

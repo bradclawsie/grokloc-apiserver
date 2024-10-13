@@ -1,0 +1,54 @@
+name: CI
+
+on: 
+  push:
+  pull_request:
+
+env:
+  GROKLOC_ENV: UNIT
+
+jobs:
+  ci:
+    runs-on: ubuntu-24.04
+    env:
+      PGHOST: localhost
+      PGDATABASE: app
+      PGUSERNAME: grokloc
+      PGPASSWORD: grokloc
+      POSTGRES_APP_URL: postgres://grokloc:grokloc@localhost:5432/app
+      REPOSITORY_BASE: /tmp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.23.0'
+      - run: go version
+          
+      - name: update
+        run: |
+          sudo apt update
+      - name: install deps
+        run: |
+          sudo apt install -y just fish
+      - name: initialize db
+        run: |
+          pushd database
+          sudo systemctl start postgresql.service && sleep 3
+          just create-users create-databases alter-grants apply-schema
+          popd
+      - name: tools
+        run: |
+          just tools
+      - name: build
+        run: |
+          just mod
+      - name: test
+        run: |
+          just test
+      - name: lint
+        run: |
+          echo "$HOME/go/bin" >> $GITHUB_PATH
+          golangci-lint --timeout=24h run pkg/... && staticcheck ./... && go vet ./... && govulncheck ./...
+
+
+      

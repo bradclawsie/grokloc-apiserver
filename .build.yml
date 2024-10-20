@@ -1,0 +1,30 @@
+image: archlinux
+
+environment:
+  PGHOST: localhost
+  PGDATABASE: app
+  PGUSERNAME: grokloc
+  PGPASSWORD: grokloc
+  POSTGRES_APP_URL: postgres://grokloc:grokloc@localhost:5432/app
+  REPOSITORY_BASE: /tmp
+
+tasks:
+  - update-pacman: |
+      sudo pacman -Sy
+  - update-packages: |
+      sudo pacman --noconfirm -S git just fish postgresql go staticcheck
+  - grokloc-db: |
+      cd /home/build && git clone https://git.sr.ht/~grokloc/grokloc-db
+      cd /home/build/grokloc-db && sudo just initdb
+      sudo systemctl start postgresql.service && sleep 5
+      cd /home/build/grokloc-db && just create-users create-databases alter-grants apply-schema
+  - tools: |
+      cd /home/build && mkdir aur
+      cd /home/build/aur && git clone https://aur.archlinux.org/golangci-lint.git && cd golangci-lint && makepkg -i --noconfirm
+      cd /home/build/aur && git clone https://aur.archlinux.org/govulncheck-git.git && cd govulncheck-git && makepkg -i --noconfirm
+  - mod: |
+      cd /home/build/grokloc-apiserver && just mod
+  - test: |
+      cd /home/build/grokloc-apiserver && just test
+  - lint: |
+      cd /home/build/grokloc-apiserver && just lint

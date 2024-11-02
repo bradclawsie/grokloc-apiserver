@@ -2,14 +2,12 @@ package org
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
-	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 )
@@ -18,12 +16,9 @@ func Users(st *app.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := request.GetLogger(r)
 
-		modelObject := withmodel.GetModelAny(r)
-		o, ok := modelObject.(*org.Org)
-		if !ok {
-			logger.Error("coerce model to *org.Org", "err", errors.New("withmodel middleware cached object not coerced to *org.Org"))
-			http.Error(w, "internal error", http.StatusInternalServerError)
-			return
+		o, err := GetModel(r)
+		if err != nil {
+			logger.Error("get org model", "err", err)
 		}
 
 		acquireCtx, acquireCancel := context.WithTimeout(context.Background(), st.ConnTimeout)

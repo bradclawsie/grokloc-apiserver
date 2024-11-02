@@ -48,12 +48,9 @@ func Put(st *app.State) http.HandlerFunc {
 		// some updates have special limitations on auth
 		auth := withuser.GetAuth(r)
 
-		modelObject := withmodel.GetModelAny(r)
-		u, ok := modelObject.(*user.User)
-		if !ok {
-			logger.Error("coerce model to *user.User", "err", errors.New("withmodel middleware cached object not coerced to *user.User"))
-			http.Error(w, "internal error", http.StatusInternalServerError)
-			return
+		u, err := GetModel(r)
+		if err != nil {
+			logger.Error("get user model", "err", err)
 		}
 
 		acquireCtx, acquireCancel := context.WithTimeout(context.Background(), st.ConnTimeout)
@@ -75,7 +72,7 @@ func Put(st *app.State) http.HandlerFunc {
 		defer updateCtxCancel()
 		var updateErr error
 
-		bs := body.GetBody(r)
+		bs := body.FromRequest(r)
 
 		if decodeToUpdateStatusEvent(bs, &updateStatusEvent) {
 			// only org owner or root can update a user status

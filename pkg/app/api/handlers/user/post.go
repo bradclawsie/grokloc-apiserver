@@ -27,7 +27,7 @@ func Post(st *app.State) http.HandlerFunc {
 
 		// ev has custom UnmsarshalJSON, so do not use json.Decoder here
 		// see CreateEvent.UnmarshalJSON
-		umErr := json.Unmarshal(body.GetBody(r), &ev)
+		umErr := json.Unmarshal(body.FromRequest(r), &ev)
 		if umErr != nil {
 			logger.Debug("decode CreateEvent", "err", umErr)
 			http.Error(w, "user create json malformed", http.StatusBadRequest)

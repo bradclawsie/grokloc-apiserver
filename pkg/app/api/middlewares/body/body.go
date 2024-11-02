@@ -34,8 +34,8 @@ func Middleware() func(http.Handler) http.Handler {
 	}
 }
 
-// GetBody returns the request body. Panic indicates coding error.
-func GetBody(r *http.Request) []byte {
+// FromRequest returns the request body. Panic indicates coding error.
+func FromRequest(r *http.Request) []byte {
 	v := r.Context().Value(BodyKey)
 	if v == nil {
 		panic("retrieve body from context")

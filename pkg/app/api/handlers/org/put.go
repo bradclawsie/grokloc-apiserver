@@ -11,7 +11,6 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
-	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/render"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 )
@@ -32,6 +31,11 @@ func Put(st *app.State) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := request.GetLogger(r)
 
+		o, err := GetModel(r)
+		if err != nil {
+			logger.Error("get org model", "err", err)
+		}
+
 		acquireCtx, acquireCancel := context.WithTimeout(context.Background(), st.ConnTimeout)
 		defer acquireCancel()
 		conn, connErr := st.Master.Acquire(acquireCtx)
@@ -42,20 +46,6 @@ func Put(st *app.State) http.HandlerFunc {
 		}
 		defer conn.Release()
 
-		execCtx, execCtxCancel := context.WithTimeout(context.Background(), st.ExecTimeout)
-		defer execCtxCancel()
-
-		o, oErr := org.Read(execCtx, conn.Conn(), withmodel.GetID(r))
-		if oErr != nil {
-			if oErr == models.ErrNotFound {
-				http.Error(w, "not found", http.StatusNotFound)
-				return
-			}
-			logger.Error("org read", "err", oErr)
-			http.Error(w, "internal error", http.StatusInternalServerError)
-			return
-		}
-
 		updateCtx, updateCtxCancel := context.WithTimeout(context.Background(), st.ExecTimeout)
 		defer updateCtxCancel()
 		var updateErr error
@@ -63,7 +53,7 @@ func Put(st *app.State) http.HandlerFunc {
 		var updateStatusEvent org.UpdateStatusEvent
 		var updateOwnerEvent org.UpdateOwnerEvent
 
-		bs := body.GetBody(r)
+		bs := body.FromRequest(r)
 
 		if decodeToUpdateStatusEvent(bs, &updateStatusEvent) {
 			updateErr = o.UpdateStatus(updateCtx, conn.Conn(), updateStatusEvent.Status)

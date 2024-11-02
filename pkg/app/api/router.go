@@ -12,8 +12,6 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/auth/withuser"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/body"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/request"
-	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
-	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
 	"github.com/rs/cors"
 )
 
@@ -51,7 +49,8 @@ func NewRouter(st *app.State) *chi.Mux {
 				Post("/", org.Post(st))
 
 			rtr.Route("/{id}", func(rtr chi.Router) {
-				rtr.Use(withmodel.Middleware(st, models.KindOrg))
+				rtr.Use(org.LoadModel(st))
+
 				rtr.Group(func(rtr chi.Router) {
 					rtr.Use(withauth.RequireOneOf(st, withuser.AuthRoot, withuser.AuthOrg))
 
@@ -59,6 +58,7 @@ func NewRouter(st *app.State) *chi.Mux {
 
 					rtr.Get("/users", org.Users(st))
 				})
+
 				rtr.Group(func(rtr chi.Router) {
 					rtr.Use(withauth.RequireOneOf(st, withuser.AuthRoot))
 
@@ -76,7 +76,7 @@ func NewRouter(st *app.State) *chi.Mux {
 				Post("/", user.Post(st)) // auth enforced in handler
 
 			rtr.Route("/{id}", func(rtr chi.Router) {
-				rtr.Use(withmodel.Middleware(st, models.KindUser))
+				rtr.Use(user.LoadModel(st))
 
 				rtr.With(withauth.RequireOneOf(st, withuser.AuthRoot, withuser.AuthOrg, withuser.AuthUser)).
 					Get("/", user.Get(st))
@@ -86,7 +86,7 @@ func NewRouter(st *app.State) *chi.Mux {
 
 				rtr.With(body.Middleware()).
 					With(withauth.RequireOneOf(st, withuser.AuthRoot, withuser.AuthOrg, withuser.AuthUser)).
-					Put("/", user.Put(st)) // some refined auth rules in handler
+					Put("/", user.Put(st)) // further auth rules in handler
 			})
 		})
 	})

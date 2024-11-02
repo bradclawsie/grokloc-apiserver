@@ -107,7 +107,7 @@ func GetID(r *http.Request) models.ID {
 	return modelID
 }
 
-// GetWithOrg returns the model object as a models.WithOrg instance.
+// GetModelWithOrg returns the model object as a models.WithOrg instance.
 // Panic indicates coding error.
 func GetModelWithOrg(r *http.Request) models.WithOrg {
 	v := r.Context().Value(ModelKey)
@@ -121,7 +121,7 @@ func GetModelWithOrg(r *http.Request) models.WithOrg {
 	return modelWithOrg
 }
 
-// GetWithUser returns the model object as a models.WithUser instance.
+// GetModelWithUser returns the model object as a models.WithUser instance.
 // Panic indicates coding error.
 func GetModelWithUser(r *http.Request) models.WithUser {
 	v := r.Context().Value(ModelKey)

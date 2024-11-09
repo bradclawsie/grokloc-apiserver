@@ -93,7 +93,7 @@ func Decrypt(e, expected_sha256 string, key []byte) (string, error) {
 		return "", ErrNonce
 	}
 	nonce, msg := d[:nonceSize], d[nonceSize:]
-	bs, err := gcm.Open(nil, nonce, msg, nil)
+	bs, err := gcm.Open(nil, nonce, msg, nil) // #nosec G407
 	if err != nil {
 		return "", err
 	}

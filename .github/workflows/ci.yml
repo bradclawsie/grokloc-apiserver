@@ -50,7 +50,7 @@ jobs:
       - name: lint
         run: |
           echo "$HOME/go/bin" >> $GITHUB_PATH
-          golangci-lint --timeout=24h run pkg/... && staticcheck ./... && go vet ./... && govulncheck ./...
+          golangci-lint --timeout=24h run pkg/... && staticcheck ./... && go vet ./... && govulncheck ./... && gosec ./...
 
 
       

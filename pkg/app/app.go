@@ -10,7 +10,7 @@ const (
 	RepositoryBaseEnvKey = "REPOSITORY_BASE"
 	AuthorizationHeader  = "authorization"
 	IDHeader             = "x-grokloc-id"
-	TokenRequestHeader   = "x-grokloc-token-request"
+	TokenRequestHeader   = "x-grokloc-token-request" // #nosec G101
 	MaxBodySize          = 8192
 	APIPath              = "/api/"
 )

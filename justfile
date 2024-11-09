@@ -18,7 +18,7 @@ test:
     go test -race -v ./...
 
 lint:
-    golangci-lint --timeout=24h run pkg/... && staticcheck ./... && go vet ./... && govulncheck ./...
+    golangci-lint --timeout=24h run pkg/... && staticcheck ./... && go vet ./... && govulncheck ./... && gosec ./...
 
 psql:
     psql $POSTGRES_APP_URL
@@ -36,5 +36,6 @@ tools:
     go install honnef.co/go/tools/cmd/staticcheck@latest
     go install golang.org/x/vuln/cmd/govulncheck@latest
     go install golang.org/x/tools/gopls@latest
+    go install github.com/securego/gosec/v2/cmd/gosec@latest
 
 ci: mod test lint

@@ -1,9 +1,11 @@
 package app
 
 import (
+	"crypto/rand"
 	"errors"
+	"fmt"
 	"log/slog"
-	"math/rand/v2"
+	"math/big"
 	"time"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
@@ -67,7 +69,11 @@ func (s *State) RandomReplica() *pgxpool.Pool {
 	if l == 0 {
 		panic("no replicas")
 	}
-	return s.Replicas[rand.IntN(l)]
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(l)))
+	if err != nil {
+		panic(fmt.Sprintf("cannot generate random replica index in 0:%v", l))
+	}
+	return s.Replicas[n.Int64()]
 }
 
 // Close performs any post-use tasks.

@@ -22,6 +22,7 @@ tasks:
       cd /home/build && mkdir aur
       cd /home/build/aur && git clone https://aur.archlinux.org/golangci-lint.git && cd golangci-lint && makepkg -i --noconfirm
       cd /home/build/aur && git clone https://aur.archlinux.org/govulncheck-git.git && cd govulncheck-git && makepkg -i --noconfirm
+      cd /home/build/aur && git clone https://aur.archlinux.org/gosec.git && cd gosec && makepkg -i --noconfirm
   - mod: |
       cd /home/build/grokloc-apiserver && just mod
   - test: |

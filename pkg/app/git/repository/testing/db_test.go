@@ -3,7 +3,7 @@ package testing
 import (
 	"context"
 	"log"
-	"testing"
+	testing_ "testing"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/git/repository"
@@ -12,118 +12,114 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/safe"
 	"github.com/grokloc/grokloc-apiserver/pkg/security"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 )
 
-type DBSuite struct {
-	suite.Suite
-	st *app.State
+var st *app.State
+
+func TestRepository(t *testing_.T) {
+	t.Run("InsertRead", func(t *testing_.T) {
+		t.Parallel()
+		r := &repository.Repository{}
+		r.ID = models.NewID()
+		r.Name = safe.TrustedVarChar(security.RandString())
+		r.Org = models.NewID()
+		r.Owner = models.NewID()
+		r.Path = "/"
+		r.Meta.Role = models.RoleTest
+		r.Meta.Status = models.StatusActive
+
+		conn, connErr := st.Master.Acquire(context.Background())
+		require.NoError(t, connErr)
+		defer conn.Release()
+
+		require.NoError(t, r.Insert(context.Background(), conn.Conn()))
+
+		// duplicate
+		require.Equal(t, models.ErrConflict, r.Insert(context.Background(), conn.Conn()))
+
+		// read
+		rRead, readErr := repository.Read(context.Background(), conn.Conn(), r.ID)
+		require.NoError(t, readErr)
+		require.Equal(t, r.ID, rRead.ID)
+		require.Equal(t, r.Name, rRead.Name)
+		require.Equal(t, r.Org, rRead.Org)
+		require.Equal(t, r.Owner, rRead.Owner)
+		require.Equal(t, r.Path, rRead.Path)
+		require.Equal(t, r.Meta.Role, rRead.Meta.Role)
+		require.Equal(t, r.Meta.Status, rRead.Meta.Status)
+		require.Equal(t, r.Meta.SchemaVersion, rRead.Meta.SchemaVersion)
+		require.NotEqual(t, r.Meta.Ctime, rRead.Meta.Ctime)
+		require.NotEqual(t, r.Meta.Mtime, rRead.Meta.Mtime)
+		require.NotEqual(t, r.Meta.Signature, rRead.Meta.Signature)
+	})
+
+	t.Run("ReadMissing", func(t *testing_.T) {
+		t.Parallel()
+		conn, connErr := st.Master.Acquire(context.Background())
+		require.NoError(t, connErr)
+		defer conn.Release()
+
+		_, readErr := repository.Read(context.Background(), conn.Conn(), models.NewID())
+		require.Equal(t, models.ErrNotFound, readErr)
+	})
+
+	t.Run("Create", func(t *testing_.T) {
+		t.Parallel()
+		conn, connErr := st.Master.Acquire(context.Background())
+		require.NoError(t, connErr)
+		defer conn.Release()
+
+		name := safe.TrustedVarChar(security.RandString())
+		org := models.NewID()
+		owner := models.NewID()
+		path := "/"
+
+		r, createErr := repository.Create(context.Background(), conn.Conn(), name, org, owner, path, models.RoleTest)
+		require.NoError(t, createErr)
+
+		require.Equal(t, r.Name, name)
+		require.Equal(t, r.Org, org)
+		require.Equal(t, r.Owner, owner)
+		require.Equal(t, r.Path, path)
+		require.Equal(t, r.Meta.Role, models.RoleTest)
+	})
+
+	t.Run("Delete", func(t *testing_.T) {
+		t.Parallel()
+		conn, connErr := st.Master.Acquire(context.Background())
+		require.NoError(t, connErr)
+		defer conn.Release()
+
+		name := safe.TrustedVarChar(security.RandString())
+		org := models.NewID()
+		owner := models.NewID()
+		path := "/"
+
+		r, createErr := repository.Create(context.Background(), conn.Conn(), name, org, owner, path, models.RoleTest)
+		require.NoError(t, createErr)
+		require.NoError(t, repository.Delete(context.Background(), conn.Conn(), r.ID))
+		_, readErr := repository.Read(context.Background(), conn.Conn(), r.ID)
+		require.Error(t, readErr)
+		require.Equal(t, models.ErrNotFound, readErr)
+	})
+
+	t.Run("DeleteMissing", func(t *testing_.T) {
+		t.Parallel()
+		conn, connErr := st.Master.Acquire(context.Background())
+		require.NoError(t, connErr)
+		defer conn.Release()
+
+		deleteErr := repository.Delete(context.Background(), conn.Conn(), models.NewID())
+		require.Error(t, deleteErr)
+		require.Equal(t, models.ErrRowsAffected, deleteErr)
+	})
 }
 
-func (s *DBSuite) SetupSuite() {
-	var err error
-	s.st, err = unit.State()
-	if err != nil {
-		log.Fatal(err.Error())
+func TestMain(m *testing_.M) {
+	var stErr error
+	st, stErr = unit.State()
+	if stErr != nil {
+		log.Fatal(stErr.Error())
 	}
-}
-
-func (s *DBSuite) TestInsertRead() {
-	r := &repository.Repository{}
-	r.ID = models.NewID()
-	r.Name = safe.TrustedVarChar(security.RandString())
-	r.Org = models.NewID()
-	r.Owner = models.NewID()
-	r.Path = "/"
-	r.Meta.Role = models.RoleTest
-	r.Meta.Status = models.StatusActive
-
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-
-	require.NoError(s.T(), r.Insert(context.Background(), conn.Conn()))
-
-	// duplicate
-	require.Equal(s.T(), models.ErrConflict, r.Insert(context.Background(), conn.Conn()))
-
-	// read
-	rRead, readErr := repository.Read(context.Background(), conn.Conn(), r.ID)
-	require.NoError(s.T(), readErr)
-	require.Equal(s.T(), r.ID, rRead.ID)
-	require.Equal(s.T(), r.Name, rRead.Name)
-	require.Equal(s.T(), r.Org, rRead.Org)
-	require.Equal(s.T(), r.Owner, rRead.Owner)
-	require.Equal(s.T(), r.Path, rRead.Path)
-	require.Equal(s.T(), r.Meta.Role, rRead.Meta.Role)
-	require.Equal(s.T(), r.Meta.Status, rRead.Meta.Status)
-	require.Equal(s.T(), r.Meta.SchemaVersion, rRead.Meta.SchemaVersion)
-	require.NotEqual(s.T(), r.Meta.Ctime, rRead.Meta.Ctime)
-	require.NotEqual(s.T(), r.Meta.Mtime, rRead.Meta.Mtime)
-	require.NotEqual(s.T(), r.Meta.Signature, rRead.Meta.Signature)
-}
-
-func (s *DBSuite) TestReadMissing() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-
-	_, readErr := repository.Read(context.Background(), conn.Conn(), models.NewID())
-	require.Equal(s.T(), models.ErrNotFound, readErr)
-}
-
-func (s *DBSuite) TestCreate() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-
-	name := safe.TrustedVarChar(security.RandString())
-	org := models.NewID()
-	owner := models.NewID()
-	path := "/"
-
-	r, createErr := repository.Create(context.Background(), conn.Conn(), name, org, owner, path, models.RoleTest)
-	require.NoError(s.T(), createErr)
-
-	require.Equal(s.T(), r.Name, name)
-	require.Equal(s.T(), r.Org, org)
-	require.Equal(s.T(), r.Owner, owner)
-	require.Equal(s.T(), r.Path, path)
-	require.Equal(s.T(), r.Meta.Role, models.RoleTest)
-}
-
-func (s *DBSuite) TestDelete() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-
-	name := safe.TrustedVarChar(security.RandString())
-	org := models.NewID()
-	owner := models.NewID()
-	path := "/"
-
-	r, createErr := repository.Create(context.Background(), conn.Conn(), name, org, owner, path, models.RoleTest)
-	require.NoError(s.T(), createErr)
-	require.NoError(s.T(), repository.Delete(context.Background(), conn.Conn(), r.ID))
-	_, readErr := repository.Read(context.Background(), conn.Conn(), r.ID)
-	require.Error(s.T(), readErr)
-	require.Equal(s.T(), models.ErrNotFound, readErr)
-}
-
-func (s *DBSuite) TestDeleteMissing() {
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
-	defer conn.Release()
-
-	deleteErr := repository.Delete(context.Background(), conn.Conn(), models.NewID())
-	require.Error(s.T(), deleteErr)
-	require.Equal(s.T(), models.ErrRowsAffected, deleteErr)
-}
-
-func (s *DBSuite) TearDownSuite() {
-	_ = s.st.Close()
-}
-
-func TestDBSuite(t *testing.T) {
-	suite.Run(t, new(DBSuite))
+	m.Run()
 }

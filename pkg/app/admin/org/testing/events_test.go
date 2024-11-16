@@ -2,22 +2,17 @@ package testing
 
 import (
 	"encoding/json"
-	"log"
 	testing_ "testing"
 
 	"github.com/google/uuid"
-	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
-	"github.com/grokloc/grokloc-apiserver/pkg/app/state/unit"
 	"github.com/grokloc/grokloc-apiserver/pkg/safe"
 	"github.com/grokloc/grokloc-apiserver/pkg/security"
 	"github.com/stretchr/testify/require"
 )
 
-var st *app.State
-
-func TestRepository(t *testing_.T) {
+func TestEvents(t *testing_.T) {
 	t.Run("CreateEvent", func(t *testing_.T) {
 		t.Parallel()
 		ev := org.CreateEvent{
@@ -126,13 +121,4 @@ func TestRepository(t *testing_.T) {
 		umErr = json.Unmarshal(bs, &out)
 		require.Error(t, umErr)
 	})
-}
-
-func TestMain(m *testing_.M) {
-	var stErr error
-	st, stErr = unit.State()
-	if stErr != nil {
-		log.Fatal(stErr.Error())
-	}
-	m.Run()
 }

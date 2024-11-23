@@ -3,6 +3,7 @@ package client
 import (
 	"errors"
 	"net/http"
+	testing_ "testing"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
@@ -11,179 +12,173 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (s *ClientSuite) TestCreateOrgAsRoot() {
-	ev := org.CreateEvent{
-		Name:             safe.TrustedVarChar(security.RandString()),
-		OwnerDisplayName: safe.TrustedVarChar(security.RandString()),
-		OwnerEmail:       safe.TrustedVarChar(security.RandString()),
-		OwnerPassword:    safe.TrustedPassword(security.RandString()),
-		Role:             s.st.DefaultRole,
-	}
-	_, createErr := s.rootClient.CreateOrg(ev.Name, ev.OwnerDisplayName, ev.OwnerEmail, ev.OwnerPassword, ev.Role)
-	require.NoError(s.T(), createErr)
-}
+func TestOrg(t *testing_.T) {
+	t.Run("CreateOrgAsRoot", func(t *testing_.T) {
+		ev := org.CreateEvent{
+			Name:             safe.TrustedVarChar(security.RandString()),
+			OwnerDisplayName: safe.TrustedVarChar(security.RandString()),
+			OwnerEmail:       safe.TrustedVarChar(security.RandString()),
+			OwnerPassword:    safe.TrustedPassword(security.RandString()),
+			Role:             st.DefaultRole,
+		}
+		_, createErr := rootClient.CreateOrg(ev.Name, ev.OwnerDisplayName, ev.OwnerEmail, ev.OwnerPassword, ev.Role)
+		require.NoError(t, createErr)
+	})
 
-// TestCreateOrgAsOrgOwner demonstrates that org owner auth cannot create an org.
-func (s *ClientSuite) TestCreateOrgAsOrgOwner() {
-	ev := org.CreateEvent{
-		Name:             safe.TrustedVarChar(security.RandString()),
-		OwnerDisplayName: safe.TrustedVarChar(security.RandString()),
-		OwnerEmail:       safe.TrustedVarChar(security.RandString()),
-		OwnerPassword:    safe.TrustedPassword(security.RandString()),
-		Role:             s.st.DefaultRole,
-	}
-	_, createErr := s.orgOwnerClient.CreateOrg(ev.Name, ev.OwnerDisplayName, ev.OwnerEmail, ev.OwnerPassword, ev.Role)
-	require.Error(s.T(), createErr)
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(createErr, &rErr))
-	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
-}
+	t.Run("CreateOrgAsOrgOwner", func(t *testing_.T) {
+		ev := org.CreateEvent{
+			Name:             safe.TrustedVarChar(security.RandString()),
+			OwnerDisplayName: safe.TrustedVarChar(security.RandString()),
+			OwnerEmail:       safe.TrustedVarChar(security.RandString()),
+			OwnerPassword:    safe.TrustedPassword(security.RandString()),
+			Role:             st.DefaultRole,
+		}
+		_, createErr := orgOwnerClient.CreateOrg(ev.Name, ev.OwnerDisplayName, ev.OwnerEmail, ev.OwnerPassword, ev.Role)
+		require.Error(t, createErr)
+		var rErr ResponseErr
+		require.True(t, errors.As(createErr, &rErr))
+		require.Equal(t, http.StatusForbidden, rErr.StatusCode)
+	})
 
-func (s *ClientSuite) TestCreateOrgAsRegularUser() {
-	ev := org.CreateEvent{
-		Name:             safe.TrustedVarChar(security.RandString()),
-		OwnerDisplayName: safe.TrustedVarChar(security.RandString()),
-		OwnerEmail:       safe.TrustedVarChar(security.RandString()),
-		OwnerPassword:    safe.TrustedPassword(security.RandString()),
-		Role:             s.st.DefaultRole,
-	}
-	_, createErr := s.regularUserClient.CreateOrg(ev.Name, ev.OwnerDisplayName, ev.OwnerEmail, ev.OwnerPassword, ev.Role)
-	require.Error(s.T(), createErr)
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(createErr, &rErr))
-	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
-}
+	t.Run("CreateOrgAsRegularUser", func(t *testing_.T) {
+		ev := org.CreateEvent{
+			Name:             safe.TrustedVarChar(security.RandString()),
+			OwnerDisplayName: safe.TrustedVarChar(security.RandString()),
+			OwnerEmail:       safe.TrustedVarChar(security.RandString()),
+			OwnerPassword:    safe.TrustedPassword(security.RandString()),
+			Role:             st.DefaultRole,
+		}
+		_, createErr := regularUserClient.CreateOrg(ev.Name, ev.OwnerDisplayName, ev.OwnerEmail, ev.OwnerPassword, ev.Role)
+		require.Error(t, createErr)
+		var rErr ResponseErr
+		require.True(t, errors.As(createErr, &rErr))
+		require.Equal(t, http.StatusForbidden, rErr.StatusCode)
+	})
 
-func (s *ClientSuite) TestReadOrgAsRoot() {
-	_, readErr := s.rootClient.ReadOrg(s.org.ID)
-	require.NoError(s.T(), readErr)
+	t.Run("ReadOrgAsRoot", func(t *testing_.T) {
+		_, readErr := rootClient.ReadOrg(o.ID)
+		require.NoError(t, readErr)
+		_, readErr = rootClient.ReadOrg(models.NewID())
+		var rErr ResponseErr
+		require.True(t, errors.As(readErr, &rErr))
+		require.Equal(t, http.StatusNotFound, rErr.StatusCode)
+	})
 
-	// try with an unknown org
-	_, readErr = s.rootClient.ReadOrg(models.NewID())
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(readErr, &rErr))
-	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
-}
+	t.Run("ReadOrgAsOrgOwner", func(t *testing_.T) {
+		_, readErr := orgOwnerClient.ReadOrg(o.ID)
+		require.NoError(t, readErr)
+		_, readErr = orgOwnerClient.ReadOrg(models.NewID())
+		var rErr ResponseErr
+		require.True(t, errors.As(readErr, &rErr))
+		require.Equal(t, http.StatusNotFound, rErr.StatusCode)
+	})
 
-func (s *ClientSuite) TestReadOrgAsOrgOwner() {
-	_, readErr := s.orgOwnerClient.ReadOrg(s.org.ID)
-	require.NoError(s.T(), readErr)
-	_, readErr = s.rootClient.ReadOrg(models.NewID())
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(readErr, &rErr))
-	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
-}
+	t.Run("ReadOrgAsRegularUser", func(t *testing_.T) {
+		_, readErr := regularUserClient.ReadOrg(o.ID)
+		var rErr ResponseErr
+		require.True(t, errors.As(readErr, &rErr))
+		require.Equal(t, http.StatusForbidden, rErr.StatusCode)
+	})
 
-func (s *ClientSuite) TestReadOrgAsRegularUser() {
-	_, readErr := s.regularUserClient.ReadOrg(s.org.ID)
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(readErr, &rErr))
-	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
-}
+	t.Run("ReadOrgUsersAsRoot", func(t *testing_.T) {
+		userIDs, readErr := rootClient.ReadOrgUsers(o.ID)
+		require.NoError(t, readErr)
+		require.NotEqual(t, 0, len(userIDs))
+		_, readErr = rootClient.ReadOrgUsers(models.NewID())
+		var rErr ResponseErr
+		require.True(t, errors.As(readErr, &rErr))
+		require.Equal(t, http.StatusNotFound, rErr.StatusCode)
+	})
 
-func (s *ClientSuite) TestReadOrgUsersAsRoot() {
-	userIDs, readErr := s.rootClient.ReadOrgUsers(s.org.ID)
-	require.NoError(s.T(), readErr)
-	require.NotEqual(s.T(), 0, len(userIDs))
+	t.Run("ReadOrgUsersAsOrgOwner", func(t *testing_.T) {
+		userIDs, readErr := orgOwnerClient.ReadOrgUsers(o.ID)
+		require.NoError(t, readErr)
+		require.NotEqual(t, 0, len(userIDs))
+		_, readErr = orgOwnerClient.ReadOrgUsers(models.NewID())
+		var rErr ResponseErr
+		require.True(t, errors.As(readErr, &rErr))
+		require.Equal(t, http.StatusNotFound, rErr.StatusCode)
+	})
 
-	// try with an unknown org
-	_, readErr = s.rootClient.ReadOrgUsers(models.NewID())
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(readErr, &rErr))
-	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
-}
+	t.Run("ReadOrgUsersAsRegularUser", func(t *testing_.T) {
+		_, readErr := regularUserClient.ReadOrgUsers(o.ID)
+		var rErr ResponseErr
+		require.True(t, errors.As(readErr, &rErr))
+		require.Equal(t, http.StatusForbidden, rErr.StatusCode)
+	})
 
-func (s *ClientSuite) TestReadOrgUsersAsOrgOwner() {
-	userIDs, readErr := s.orgOwnerClient.ReadOrgUsers(s.org.ID)
-	require.NoError(s.T(), readErr)
-	require.NotEqual(s.T(), 0, len(userIDs))
-	_, readErr = s.rootClient.ReadOrgUsers(models.NewID())
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(readErr, &rErr))
-	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
-}
+	t.Run("UpdateOrgOwnerAsRoot", func(t *testing_.T) {
+		_, updateErr := rootClient.UpdateOrgOwner(o.ID, regularUser.ID)
+		require.NoError(t, updateErr)
+		_, updateErr = rootClient.UpdateOrgOwner(o.ID, orgOwner.ID)
+		require.NoError(t, updateErr)
+		_, updateErr = rootClient.UpdateOrgOwner(models.NewID(), orgOwner.ID)
+		var rErr ResponseErr
+		require.True(t, errors.As(updateErr, &rErr))
+		require.Equal(t, http.StatusNotFound, rErr.StatusCode)
+	})
 
-func (s *ClientSuite) TestReadOrgUsersAsRegularUser() {
-	_, readErr := s.regularUserClient.ReadOrg(s.org.ID)
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(readErr, &rErr))
-	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
-}
+	t.Run("UpdateOrgOwnerAsOrgOwner", func(t *testing_.T) {
+		_, updateErr := orgOwnerClient.UpdateOrgOwner(o.ID, regularUser.ID)
+		var rErr ResponseErr
+		require.True(t, errors.As(updateErr, &rErr))
+		require.Equal(t, http.StatusForbidden, rErr.StatusCode)
+	})
 
-func (s *ClientSuite) TestUpdateOrgOwnerAsRoot() {
-	// change regularUser to be owner, then undo the change
-	_, updateErr := s.rootClient.UpdateOrgOwner(s.org.ID, s.regularUser.ID)
-	require.NoError(s.T(), updateErr)
-	_, updateErr = s.rootClient.UpdateOrgOwner(s.org.ID, s.orgOwner.ID)
-	require.NoError(s.T(), updateErr)
+	t.Run("UpdateOrgOwnerAsRegularUser", func(t *testing_.T) {
+		_, updateErr := regularUserClient.UpdateOrgOwner(o.ID, regularUser.ID)
+		var rErr ResponseErr
+		require.True(t, errors.As(updateErr, &rErr))
+		require.Equal(t, http.StatusForbidden, rErr.StatusCode)
+	})
 
-	// try with an unknown org
-	_, updateErr = s.rootClient.UpdateOrgOwner(models.NewID(), s.orgOwner.ID)
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(updateErr, &rErr))
-	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
-}
+	t.Run("UpdateOrgStatusAsRoot", func(t *testing_.T) {
+		_, updateErr := rootClient.UpdateOrgStatus(o.ID, models.StatusInactive)
+		require.NoError(t, updateErr)
+		_, updateErr = rootClient.UpdateOrgStatus(o.ID, models.StatusActive)
+		require.NoError(t, updateErr)
+		_, updateErr = rootClient.UpdateOrgStatus(models.NewID(), models.StatusInactive)
+		var rErr ResponseErr
+		require.True(t, errors.As(updateErr, &rErr))
+		require.Equal(t, http.StatusNotFound, rErr.StatusCode)
+	})
 
-func (s *ClientSuite) TestUpdateOrgOwnerAsOrgOwner() {
-	_, updateErr := s.orgOwnerClient.UpdateOrgOwner(s.org.ID, s.regularUser.ID)
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(updateErr, &rErr))
-	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
-}
+	t.Run("UpdateOrgStatusAsOrgOwner", func(t *testing_.T) {
+		_, updateErr := orgOwnerClient.UpdateOrgStatus(o.ID, models.StatusInactive)
+		var rErr ResponseErr
+		require.True(t, errors.As(updateErr, &rErr))
+		require.Equal(t, http.StatusForbidden, rErr.StatusCode)
+	})
 
-func (s *ClientSuite) TestUpdateOrgOwnerAsRegularUser() {
-	_, updateErr := s.regularUserClient.UpdateOrgOwner(s.org.ID, s.regularUser.ID)
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(updateErr, &rErr))
-	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
-}
+	t.Run("UpdateOrgStatusAsRegularUser", func(t *testing_.T) {
+		_, updateErr := regularUserClient.UpdateOrgStatus(o.ID, models.StatusInactive)
+		var rErr ResponseErr
+		require.True(t, errors.As(updateErr, &rErr))
+		require.Equal(t, http.StatusForbidden, rErr.StatusCode)
+	})
 
-func (s *ClientSuite) TestUpdateOrgStatusAsRoot() {
-	// change status to inactive, then undo the change
-	_, updateErr := s.rootClient.UpdateOrgStatus(s.org.ID, models.StatusInactive)
-	require.NoError(s.T(), updateErr)
-	_, updateErr = s.rootClient.UpdateOrgStatus(s.org.ID, models.StatusActive)
-	require.NoError(s.T(), updateErr)
+	t.Run("DeleteOrgAsRoot", func(t *testing_.T) {
+		updateErr := rootClient.DeleteOrg(o.ID)
+		require.NoError(t, updateErr)
+		_, updateErr = rootClient.UpdateOrgStatus(o.ID, models.StatusActive)
+		require.NoError(t, updateErr)
+		updateErr = rootClient.DeleteOrg(models.NewID())
+		var rErr ResponseErr
+		require.True(t, errors.As(updateErr, &rErr))
+		require.Equal(t, http.StatusNotFound, rErr.StatusCode)
+	})
 
-	// try with an unknown org
-	_, updateErr = s.rootClient.UpdateOrgStatus(models.NewID(), models.StatusActive)
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(updateErr, &rErr))
-	require.Equal(s.T(), http.StatusNotFound, rErr.StatusCode)
-}
+	t.Run("DeleteOrgAsOrgOwner", func(t *testing_.T) {
+		updateErr := orgOwnerClient.DeleteOrg(o.ID)
+		var rErr ResponseErr
+		require.True(t, errors.As(updateErr, &rErr))
+		require.Equal(t, http.StatusForbidden, rErr.StatusCode)
+	})
 
-func (s *ClientSuite) TestUpdateOrgStatusAsOrgOwner() {
-	_, updateErr := s.orgOwnerClient.UpdateOrgStatus(s.org.ID, models.StatusInactive)
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(updateErr, &rErr))
-	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
-}
-
-func (s *ClientSuite) TestUpdateOrgStatusAsRegularUser() {
-	_, updateErr := s.regularUserClient.UpdateOrgStatus(s.org.ID, models.StatusInactive)
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(updateErr, &rErr))
-	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
-}
-
-func (s *ClientSuite) TestDeleteOrgAsRoot() {
-	// change status to inactive, then undo the change
-	updateErr := s.rootClient.DeleteOrg(s.org.ID)
-	require.NoError(s.T(), updateErr)
-	_, updateErr = s.rootClient.UpdateOrgStatus(s.org.ID, models.StatusActive)
-	require.NoError(s.T(), updateErr)
-}
-
-func (s *ClientSuite) TestDeleteOrgAsOrgOwner() {
-	updateErr := s.orgOwnerClient.DeleteOrg(s.org.ID)
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(updateErr, &rErr))
-	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
-}
-
-func (s *ClientSuite) TestDeleteOrgAsRegularUser() {
-	updateErr := s.regularUserClient.DeleteOrg(s.org.ID)
-	var rErr ResponseErr
-	require.True(s.T(), errors.As(updateErr, &rErr))
-	require.Equal(s.T(), http.StatusForbidden, rErr.StatusCode)
+	t.Run("DeleteOrgAsRegularUser", func(t *testing_.T) {
+		updateErr := regularUserClient.DeleteOrg(o.ID)
+		var rErr ResponseErr
+		require.True(t, errors.As(updateErr, &rErr))
+		require.Equal(t, http.StatusForbidden, rErr.StatusCode)
+	})
 }

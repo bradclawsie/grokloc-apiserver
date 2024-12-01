@@ -11,6 +11,9 @@ func TestUnit(t *testing_.T) {
 	t.Run("State", func(t *testing_.T) {
 		t.Parallel()
 		st, stErr := State()
+		defer func() {
+			_ = st.Close()
+		}()
 		require.NoError(t, stErr)
 		ctx := context.Background()
 		conn, connErr := st.Master.Acquire(ctx)

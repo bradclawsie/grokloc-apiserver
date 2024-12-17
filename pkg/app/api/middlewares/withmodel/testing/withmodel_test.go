@@ -58,6 +58,8 @@ func TestMain(m *testing_.M) {
 		})
 	})
 	srv = httptest.NewServer(rtr)
+
+	m.Run()
 }
 
 func TestClient(t *testing_.T) {

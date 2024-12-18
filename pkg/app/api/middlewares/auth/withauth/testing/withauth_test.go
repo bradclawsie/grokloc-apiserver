@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"testing"
+	testing_ "testing"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
@@ -20,30 +21,30 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api/middlewares/withmodel"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/models"
-	"github.com/grokloc/grokloc-apiserver/pkg/safe"
-	"github.com/grokloc/grokloc-apiserver/pkg/security"
-
 	"github.com/grokloc/grokloc-apiserver/pkg/app/state/unit"
 	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
+	"github.com/grokloc/grokloc-apiserver/pkg/safe"
+	"github.com/grokloc/grokloc-apiserver/pkg/security"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 )
 
-type WithAuthSuite struct {
-	suite.Suite
+var (
 	c                                          http.Client
 	o                                          *org.Org
 	owner, regularUser, peerUser               *user.User
 	srv                                        *httptest.Server
 	st                                         *app.State
 	tok, ownerTok, regularUserTok, peerUserTok token.JSONToken
-}
+)
 
-func (s *WithAuthSuite) SetupSuite() {
-	st, stErr := unit.State()
-	require.NoError(s.T(), stErr)
-	s.st = st
-	s.c = http.Client{}
+func TestMain(m *testing_.M) {
+	var stErr error
+	st, stErr = unit.State()
+	if stErr != nil {
+		log.Fatal(stErr.Error())
+	}
+
+	c = http.Client{}
 
 	rtr := chi.NewRouter()
 	rtr.Use(request.Middleware(st))
@@ -77,281 +78,335 @@ func (s *WithAuthSuite) SetupSuite() {
 		})
 	})
 
-	s.srv = httptest.NewServer(rtr)
+	srv = httptest.NewServer(rtr)
 
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
+	conn, connErr := st.Master.Acquire(context.Background())
+	if connErr != nil {
+		log.Fatal(connErr.Error())
+	}
 	defer conn.Release()
 	var createErr error
-	s.o, s.owner, s.regularUser, createErr = app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), createErr)
+	o, owner, regularUser, createErr = app_testing.TestOrgAndUser(conn.Conn(), st)
+	if createErr != nil {
+		log.Fatal(createErr.Error())
+	}
 
 	displayName := safe.TrustedVarChar(security.RandString())
 	email := safe.TrustedVarChar(security.RandString())
-	password, passwordErr := security.DerivePassword(security.RandString(), s.st.Argon2Config)
-	require.NoError(s.T(), passwordErr)
-	s.peerUser, createErr = user.Create(context.Background(), conn.Conn(), displayName, email, s.o.ID, *password, st.VersionKey)
-	require.NoError(s.T(), createErr)
-	require.NoError(s.T(), s.peerUser.UpdateStatus(context.Background(), conn.Conn(), st.VersionKey, models.StatusActive))
+	password, passwordErr := security.DerivePassword(security.RandString(), st.Argon2Config)
+	if passwordErr != nil {
+		log.Fatal(passwordErr.Error())
+	}
+	peerUser, createErr = user.Create(context.Background(), conn.Conn(), displayName, email, o.ID, *password, st.VersionKey)
+	if createErr != nil {
+		log.Fatal(createErr.Error())
+	}
+	updateErr := peerUser.UpdateStatus(context.Background(), conn.Conn(), st.VersionKey, models.StatusActive)
+	if updateErr != nil {
+		log.Fatal(updateErr.Error())
+	}
 
-	u, urlErr := url.Parse(s.srv.URL + "/token")
-	require.NoError(s.T(), urlErr)
-	tokenRequest := jwt.EncodeTokenRequest(s.st.Root.ID, s.st.Root.APISecret.String())
+	u, urlErr := url.Parse(srv.URL + "/token")
+	if urlErr != nil {
+		log.Fatal(urlErr.Error())
+	}
+	tokenRequest := jwt.EncodeTokenRequest(st.Root.ID, st.Root.APISecret.String())
 	req := http.Request{
 		URL:    u,
 		Method: http.MethodPost,
 		Header: map[string][]string{
-			app.IDHeader:           {s.st.Root.ID.String()},
+			app.IDHeader:           {st.Root.ID.String()},
 			app.TokenRequestHeader: {tokenRequest},
 		},
 	}
-	resp, postErr := s.c.Do(&req)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	resp, postErr := c.Do(&req)
+	if postErr != nil {
+		log.Fatal(postErr.Error())
+	}
+	if resp.StatusCode != http.StatusOK {
+		log.Fatal("status not ok")
+	}
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	umErr := json.Unmarshal(body, &s.tok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), s.tok.Token)
+	if readErr != nil {
+		log.Fatal(readErr.Error())
+	}
+	umErr := json.Unmarshal(body, &tok)
+	if umErr != nil {
+		log.Fatal(umErr.Error())
+	}
+	if len(tok.Token) == 0 {
+		log.Fatal("token empty")
+	}
 
-	tokenRequest = jwt.EncodeTokenRequest(s.owner.ID, s.owner.APISecret.String())
+	tokenRequest = jwt.EncodeTokenRequest(owner.ID, owner.APISecret.String())
 	req = http.Request{
 		URL:    u,
 		Method: http.MethodPost,
 		Header: map[string][]string{
-			app.IDHeader:           {s.owner.ID.String()},
+			app.IDHeader:           {owner.ID.String()},
 			app.TokenRequestHeader: {tokenRequest},
 		},
 	}
-	resp, postErr = s.c.Do(&req)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	resp, postErr = c.Do(&req)
+	if postErr != nil {
+		log.Fatal(postErr.Error())
+	}
+	if resp.StatusCode != http.StatusOK {
+		log.Fatal("status not ok")
+	}
 	defer resp.Body.Close()
 	body, readErr = io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	umErr = json.Unmarshal(body, &s.ownerTok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), s.ownerTok.Token)
+	if readErr != nil {
+		log.Fatal(readErr.Error())
+	}
+	umErr = json.Unmarshal(body, &ownerTok)
+	if umErr != nil {
+		log.Fatal(umErr.Error())
+	}
+	if len(ownerTok.Token) == 0 {
+		log.Fatal("token empty")
+	}
 
-	tokenRequest = jwt.EncodeTokenRequest(s.regularUser.ID, s.regularUser.APISecret.String())
+	tokenRequest = jwt.EncodeTokenRequest(regularUser.ID, regularUser.APISecret.String())
 	req = http.Request{
 		URL:    u,
 		Method: http.MethodPost,
 		Header: map[string][]string{
-			app.IDHeader:           {s.regularUser.ID.String()},
+			app.IDHeader:           {regularUser.ID.String()},
 			app.TokenRequestHeader: {tokenRequest},
 		},
 	}
-	resp, postErr = s.c.Do(&req)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	resp, postErr = c.Do(&req)
+	if postErr != nil {
+		log.Fatal(postErr.Error())
+	}
+	if resp.StatusCode != http.StatusOK {
+		log.Fatal("status not ok")
+	}
 	defer resp.Body.Close()
 	body, readErr = io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	umErr = json.Unmarshal(body, &s.regularUserTok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), s.regularUserTok.Token)
+	if readErr != nil {
+		log.Fatal(readErr.Error())
+	}
+	umErr = json.Unmarshal(body, &regularUserTok)
+	if umErr != nil {
+		log.Fatal(umErr.Error())
+	}
+	if len(regularUserTok.Token) == 0 {
+		log.Fatal("token empty")
+	}
 
-	tokenRequest = jwt.EncodeTokenRequest(s.peerUser.ID, s.peerUser.APISecret.String())
+	tokenRequest = jwt.EncodeTokenRequest(peerUser.ID, peerUser.APISecret.String())
 	req = http.Request{
 		URL:    u,
 		Method: http.MethodPost,
 		Header: map[string][]string{
-			app.IDHeader:           {s.peerUser.ID.String()},
+			app.IDHeader:           {peerUser.ID.String()},
 			app.TokenRequestHeader: {tokenRequest},
 		},
 	}
-	resp, postErr = s.c.Do(&req)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	resp, postErr = c.Do(&req)
+	if postErr != nil {
+		log.Fatal(postErr.Error())
+	}
+	if resp.StatusCode != http.StatusOK {
+		log.Fatal("status not ok")
+	}
 	defer resp.Body.Close()
 	body, readErr = io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	umErr = json.Unmarshal(body, &s.peerUserTok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), s.peerUserTok.Token)
+	if readErr != nil {
+		log.Fatal(readErr.Error())
+	}
+	umErr = json.Unmarshal(body, &peerUserTok)
+	if umErr != nil {
+		log.Fatal(umErr.Error())
+	}
+	if len(peerUserTok.Token) == 0 {
+		log.Fatal("token empty")
+	}
+
+	m.Run()
 }
 
-func (s *WithAuthSuite) TestRootAuthAsRoot() {
-	u, urlErr := url.Parse(s.srv.URL + "/root")
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.st.Root.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.tok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
-}
+func TestWithAuth(t *testing_.T) {
+	t.Run("TestRootAuthAsRoot", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/root")
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, st.Root.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(tok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+	})
 
-func (s *WithAuthSuite) TestRootAuthAsOrgOwner() {
-	u, urlErr := url.Parse(s.srv.URL + "/root")
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.owner.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.ownerTok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
-}
+	t.Run("TestRootAuthAsOrgOwner", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/root")
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, owner.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 
-func (s *WithAuthSuite) TestRootAuthAsRegularUser() {
-	u, urlErr := url.Parse(s.srv.URL + "/root")
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.regularUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.regularUserTok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
-}
+	t.Run("TestRootAuthAsRegularUser", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/root")
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, regularUser.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 
-func (s *WithAuthSuite) TestOrgAuthAsRoot() {
-	u, urlErr := url.Parse(s.srv.URL + "/org/" + s.o.ID.String())
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.st.Root.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.tok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
-}
+	t.Run("TestOrgAuthAsRoot", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/org/" + o.ID.String())
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, st.Root.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(tok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+	})
 
-func (s *WithAuthSuite) TestOrgAuthAsOrgOwner() {
-	u, urlErr := url.Parse(s.srv.URL + "/org/" + s.o.ID.String())
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.owner.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.ownerTok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	t.Run("TestOrgAuthAsOrgOwner", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/org/" + o.ID.String())
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, owner.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+	})
 
-	// try accessing a different org
-	u, urlErr = url.Parse(s.srv.URL + "/org/" + s.st.Org.ID.String())
-	require.NoError(s.T(), urlErr)
-	req, reqErr = http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.owner.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.ownerTok.Token))
-	resp, getErr = s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
-}
+	t.Run("TestOrgAuthAsOrgOwnerAccessOtherOrg", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/org/" + st.Org.ID.String())
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, owner.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 
-func (s *WithAuthSuite) TestOrgAuthAsRegularUser() {
-	u, urlErr := url.Parse(s.srv.URL + "/org/" + s.o.ID.String())
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.regularUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.regularUserTok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
-}
+	t.Run("TestOrgAuthAsRegularUser", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/org/" + o.ID.String())
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, regularUser.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 
-func (s *WithAuthSuite) TestUserAuthAsRoot() {
-	u, urlErr := url.Parse(s.srv.URL + "/user/" + s.regularUser.ID.String())
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.st.Root.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.tok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
-}
+	t.Run("TestUserAuthAsRoot", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/user/" + regularUser.ID.String())
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, st.Root.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(tok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+	})
 
-func (s *WithAuthSuite) TestUserAuthAsOrgOwner() {
-	u, urlErr := url.Parse(s.srv.URL + "/user/" + s.regularUser.ID.String())
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.owner.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.ownerTok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	t.Run("TestUserAuthAsOrgOwner", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/user/" + regularUser.ID.String())
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, owner.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+	})
 
-	// try a user in a different org
-	u, urlErr = url.Parse(s.srv.URL + "/user/" + s.st.Root.ID.String())
-	require.NoError(s.T(), urlErr)
-	req, reqErr = http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.owner.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.ownerTok.Token))
-	resp, getErr = s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
-}
+	t.Run("TestUserAuthAsOrgOwnerAccessOtherOrgUser", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/user/" + st.Root.ID.String())
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, owner.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 
-func (s *WithAuthSuite) TestUserAuthAsRegularUser() {
-	u, urlErr := url.Parse(s.srv.URL + "/user/" + s.regularUser.ID.String())
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.regularUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.regularUserTok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	t.Run("TestUserAuthAsRegularUser", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/user/" + regularUser.ID.String())
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, regularUser.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+	})
 
-	// try with a different user in user's org
-	u, urlErr = url.Parse(s.srv.URL + "/user/" + s.peerUser.ID.String())
-	require.NoError(s.T(), urlErr)
-	req, reqErr = http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.regularUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.regularUserTok.Token))
-	resp, getErr = s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
+	t.Run("TestUserAuthAsRegularUserPeerUser", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/user/" + peerUser.ID.String())
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, regularUser.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(regularUserTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 
-	// try with a user in other org
-	u, urlErr = url.Parse(s.srv.URL + "/user/" + s.st.Root.ID.String())
-	require.NoError(s.T(), urlErr)
-	req, reqErr = http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.regularUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.regularUserTok.Token))
-	resp, getErr = s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
-}
+	t.Run("TestUserAuthAsRegularUserOtherOrgUser", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/user/" + st.Root.ID.String())
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, regularUser.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(regularUserTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 
-func (s *WithAuthSuite) TestUserAuthAsPeerUser() {
-	u, urlErr := url.Parse(s.srv.URL + "/peer/" + s.regularUser.ID.String())
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.peerUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.peerUserTok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	t.Run("TestUserAuthAsPeerUser", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/peer/" + regularUser.ID.String())
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, peerUser.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(peerUserTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+	})
 
-	// try with a user in other org
-	u, urlErr = url.Parse(s.srv.URL + "/peer/" + s.st.Root.ID.String())
-	require.NoError(s.T(), urlErr)
-	req, reqErr = http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.peerUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.peerUserTok.Token))
-	resp, getErr = s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
-}
-
-func (s *WithAuthSuite) TearDownSuite() {
-	s.srv.Close()
-}
-
-func TestWithAuthSuite(t *testing.T) {
-	suite.Run(t, new(WithAuthSuite))
+	t.Run("TestUserAuthAsPeerUserOtherOrgUser", func(t *testing_.T) {
+		u, urlErr := url.Parse(srv.URL + "/peer/" + st.Root.ID.String())
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, peerUser.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(peerUserTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 }

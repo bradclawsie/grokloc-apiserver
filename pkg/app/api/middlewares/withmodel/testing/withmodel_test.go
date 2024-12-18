@@ -62,7 +62,7 @@ func TestMain(m *testing_.M) {
 	m.Run()
 }
 
-func TestClient(t *testing_.T) {
+func TestWithModel(t *testing_.T) {
 	client := http.Client{}
 
 	t.Run("MalformedID", func(t *testing_.T) {

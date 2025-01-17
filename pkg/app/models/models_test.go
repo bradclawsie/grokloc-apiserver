@@ -3,120 +3,103 @@ package models
 import (
 	"encoding/json"
 	"fmt"
-	"testing"
+	testing_ "testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 )
 
-type ModelsSuite struct {
-	suite.Suite
-}
+func TestModels(t *testing_.T) {
+	t.Run("BaseJSON", func(t *testing_.T) {
+		t.Parallel()
+		m := Meta{
+			Ctime:         time.Now().Unix(),
+			Mtime:         time.Now().Unix(),
+			Role:          RoleTest,
+			SchemaVersion: 2,
+			Signature:     uuid.New(),
+			Status:        StatusActive,
+		}
+		base := Base{ID: NewID(), Meta: m}
+		bs, err := json.Marshal(base)
+		require.NoError(t, err)
+		var baseOut Base
+		err = json.Unmarshal(bs, &baseOut)
+		require.NoError(t, err)
+		require.Equal(t, base.ID, baseOut.ID)
+		require.Equal(t, m, baseOut.Meta)
+		require.Equal(t, RoleTest, baseOut.Meta.Role)
+	})
 
-func (s *ModelsSuite) TestBaseJSON() {
-	m := Meta{
-		Ctime:         time.Now().Unix(),
-		Mtime:         time.Now().Unix(),
-		Role:          RoleTest,
-		SchemaVersion: 2,
-		Signature:     uuid.New(),
-		Status:        StatusActive,
-	}
-	base := Base{ID: NewID(), Meta: m}
-	bs, err := json.Marshal(base)
-	require.NoError(s.T(), err)
-	var baseOut Base
-	err = json.Unmarshal(bs, &baseOut)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), base.ID, baseOut.ID)
-	require.Equal(s.T(), m, baseOut.Meta)
-	require.Equal(s.T(), RoleTest, baseOut.Meta.Role)
-}
+	t.Run("Role", func(t *testing_.T) {
+		t.Parallel()
+		role, err := NewRole(int64(RoleNone))
+		require.Error(t, err)
+		require.Equal(t, RoleNone, role)
+		role, err = NewRole(int64(RoleNormal))
+		require.NoError(t, err)
+		require.Equal(t, RoleNormal, role)
+		role, err = NewRole(int64(RoleAdmin))
+		require.NoError(t, err)
+		require.Equal(t, RoleAdmin, role)
+		role, err = NewRole(int64(RoleTest))
+		require.NoError(t, err)
+		require.Equal(t, RoleTest, role)
+		type T struct {
+			R Role `json:"role"`
+		}
+		c := T{R: RoleTest}
+		bs, err := json.Marshal(c)
+		require.NoError(t, err)
+		out := &T{}
+		err = json.Unmarshal(bs, out)
+		require.NoError(t, err)
+		require.Equal(t, c.R, out.R)
+		c.R = RoleNone // invalid
+		bs, err = json.Marshal(c)
+		require.NoError(t, err)
+		out = &T{}
+		err = json.Unmarshal(bs, out)
+		require.Error(t, err)
+	})
 
-func (s *ModelsSuite) TestRole() {
-	role, err := NewRole(int64(RoleNone))
-	require.Error(s.T(), err)
-	require.Equal(s.T(), RoleNone, role)
+	t.Run("Status", func(t *testing_.T) {
+		t.Parallel()
+		status, err := NewStatus(int64(StatusNone))
+		require.Error(t, err)
+		require.Equal(t, StatusNone, status)
+		status, err = NewStatus(int64(StatusUnconfirmed))
+		require.NoError(t, err)
+		require.Equal(t, StatusUnconfirmed, status)
+		status, err = NewStatus(int64(StatusActive))
+		require.NoError(t, err)
+		require.Equal(t, StatusActive, status)
+		status, err = NewStatus(int64(StatusInactive))
+		require.NoError(t, err)
+		require.Equal(t, StatusInactive, status)
+		type T struct {
+			S Status `json:"status"`
+		}
+		c := T{S: StatusActive}
+		bs, err := json.Marshal(c)
+		require.NoError(t, err)
+		out := &T{}
+		err = json.Unmarshal(bs, out)
+		require.NoError(t, err)
+		require.Equal(t, c.S, out.S)
+		c.S = StatusNone // invalid
+		bs, err = json.Marshal(c)
+		require.NoError(t, err)
+		out = &T{}
+		err = json.Unmarshal(bs, out)
+		require.Error(t, err)
+	})
 
-	role, err = NewRole(int64(RoleNormal))
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), RoleNormal, role)
-
-	role, err = NewRole(int64(RoleAdmin))
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), RoleAdmin, role)
-
-	role, err = NewRole(int64(RoleTest))
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), RoleTest, role)
-
-	// round trip json to test unmarshal
-	type T struct {
-		R Role `json:"role"`
-	}
-	t := T{R: RoleTest}
-	bs, err := json.Marshal(t)
-	require.NoError(s.T(), err)
-	out := &T{}
-	err = json.Unmarshal(bs, out)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), t.R, out.R)
-
-	// RoleNone means it is an invalid role, unmarshal should fail
-	t.R = RoleNone
-	bs, err = json.Marshal(t)
-	require.NoError(s.T(), err)
-	out = &T{}
-	err = json.Unmarshal(bs, out)
-	require.Error(s.T(), err)
-}
-
-func (s *ModelsSuite) TestStatus() {
-	status, err := NewStatus(int64(StatusNone))
-	require.Error(s.T(), err)
-	require.Equal(s.T(), StatusNone, status)
-
-	status, err = NewStatus(int64(StatusUnconfirmed))
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), StatusUnconfirmed, status)
-
-	status, err = NewStatus(int64(StatusActive))
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), StatusActive, status)
-
-	status, err = NewStatus(int64(StatusInactive))
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), StatusInactive, status)
-
-	// round trip json to test unmarshal
-	type T struct {
-		S Status `json:"status"`
-	}
-	t := T{S: StatusActive}
-	bs, err := json.Marshal(t)
-	require.NoError(s.T(), err)
-	out := &T{}
-	err = json.Unmarshal(bs, out)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), t.S, out.S)
-
-	// StatusNone means it is an invalid status, unmarshal should fail
-	t.S = StatusNone
-	bs, err = json.Marshal(t)
-	require.NoError(s.T(), err)
-	out = &T{}
-	err = json.Unmarshal(bs, out)
-	require.Error(s.T(), err)
-}
-
-func (s *ModelsSuite) TestID() {
-	id := new(ID)
-	require.Error(s.T(), id.Scan("not an id"))
-	require.NoError(s.T(), id.Scan(fmt.Sprintf("%v", NewID())))
-}
-
-func TestModelsSuite(t *testing.T) {
-	suite.Run(t, new(ModelsSuite))
+	t.Run("ID", func(t *testing_.T) {
+		t.Parallel()
+		id := new(ID)
+		require.Error(t, id.Scan("not an id"))
+		require.NoError(t, id.Scan(fmt.Sprintf("%v", NewID())))
+	})
 }

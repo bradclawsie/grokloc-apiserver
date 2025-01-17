@@ -23,7 +23,6 @@ jobs:
         with:
           go-version: '>=1.23.0'
       - run: go version
-          
       - name: update
         run: |
           sudo apt update

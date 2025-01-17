@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	testing_ "testing"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
@@ -11,62 +12,68 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (s *OrgSuite) TestUsersAsRoot() {
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String() + "/users")
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.st.Root.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.tok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
-	decoder := json.NewDecoder(resp.Body)
-	decoder.DisallowUnknownFields()
-	var userIDs []models.ID
-	dcErr := decoder.Decode(&userIDs)
-	require.NoError(s.T(), dcErr)
-	require.Equal(s.T(), 2, len(userIDs))
-}
+func TestUsers(t *testing_.T) {
+	t.Run("AsRoot", func(t *testing_.T) {
+		t.Parallel()
+		u, urlErr := url.Parse(srv.URL + app.APIPath + st.APIVersion + "/org/" + o.ID.String() + "/users")
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, st.Root.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(tok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		decoder := json.NewDecoder(resp.Body)
+		decoder.DisallowUnknownFields()
+		var userIDs []models.ID
+		dcErr := decoder.Decode(&userIDs)
+		require.NoError(t, dcErr)
+		require.Equal(t, 2, len(userIDs))
+	})
 
-func (s *OrgSuite) TestUsersAsOrgOwner() {
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String() + "/users")
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.owner.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.ownerTok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
-	decoder := json.NewDecoder(resp.Body)
-	decoder.DisallowUnknownFields()
-	var userIDs []models.ID
-	dcErr := decoder.Decode(&userIDs)
-	require.NoError(s.T(), dcErr)
-	require.Equal(s.T(), 2, len(userIDs))
-}
+	t.Run("AsOrgOwner", func(t *testing_.T) {
+		t.Parallel()
+		u, urlErr := url.Parse(srv.URL + app.APIPath + st.APIVersion + "/org/" + o.ID.String() + "/users")
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, owner.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(ownerTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		decoder := json.NewDecoder(resp.Body)
+		decoder.DisallowUnknownFields()
+		var userIDs []models.ID
+		dcErr := decoder.Decode(&userIDs)
+		require.NoError(t, dcErr)
+		require.Equal(t, 2, len(userIDs))
+	})
 
-func (s *OrgSuite) TestUsersAsRegularUser() {
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + s.o.ID.String() + "/users")
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.regularUser.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.regularUserTok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusForbidden, resp.StatusCode)
-}
+	t.Run("AsRegularUser", func(t *testing_.T) {
+		t.Parallel()
+		u, urlErr := url.Parse(srv.URL + app.APIPath + st.APIVersion + "/org/" + o.ID.String() + "/users")
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, regularUser.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(regularUserTok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
 
-func (s *OrgSuite) TestUsersOrgNotFound() {
-	u, urlErr := url.Parse(s.srv.URL + app.APIPath + s.st.APIVersion + "/org/" + models.NewID().String() + "/users")
-	require.NoError(s.T(), urlErr)
-	req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
-	require.NoError(s.T(), reqErr)
-	req.Header.Add(app.IDHeader, s.st.Root.ID.String())
-	req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(s.tok.Token))
-	resp, getErr := s.c.Do(req)
-	require.NoError(s.T(), getErr)
-	require.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
+	t.Run("OrgNotFound", func(t *testing_.T) {
+		t.Parallel()
+		u, urlErr := url.Parse(srv.URL + app.APIPath + st.APIVersion + "/org/" + models.NewID().String() + "/users")
+		require.NoError(t, urlErr)
+		req, reqErr := http.NewRequest(http.MethodGet, u.String(), nil)
+		require.NoError(t, reqErr)
+		req.Header.Add(app.IDHeader, st.Root.ID.String())
+		req.Header.Add(app.AuthorizationHeader, jwt.SignedStringToHeaderValue(tok.Token))
+		resp, getErr := c.Do(req)
+		require.NoError(t, getErr)
+		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
 }

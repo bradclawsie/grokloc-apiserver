@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"testing"
+	testing_ "testing"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
-
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/user"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/api"
@@ -18,99 +18,125 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/jwt"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/state/unit"
 	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 )
 
-type OrgSuite struct {
-	suite.Suite
+var (
 	c                             http.Client
 	o                             *org.Org
 	owner, regularUser            *user.User
 	srv                           *httptest.Server
 	st                            *app.State
 	tok, ownerTok, regularUserTok token.JSONToken
-}
+)
 
-func (s *OrgSuite) SetupSuite() {
-	st, stErr := unit.State()
-	require.NoError(s.T(), stErr)
+func TestMain(m *testing_.M) {
+	var stErr error
+	st, stErr = unit.State()
+	if stErr != nil {
+		log.Fatal(stErr.Error())
+	}
 	rtr := api.NewRouter(st)
-	s.srv = httptest.NewServer(rtr)
-	s.st = st
-	s.c = http.Client{}
+	srv = httptest.NewServer(rtr)
+	c = http.Client{}
 
-	conn, connErr := s.st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
+	conn, connErr := st.Master.Acquire(context.Background())
+	if connErr != nil {
+		log.Fatal(connErr.Error())
+	}
 	defer conn.Release()
 	var createErr error
-	s.o, s.owner, s.regularUser, createErr = app_testing.TestOrgAndUser(conn.Conn(), s.st)
-	require.NoError(s.T(), createErr)
+	o, owner, regularUser, createErr = app_testing.TestOrgAndUser(conn.Conn(), st)
+	if createErr != nil {
+		log.Fatal(createErr.Error())
+	}
 
-	u, urlErr := url.Parse(s.srv.URL + "/token")
-	require.NoError(s.T(), urlErr)
-	tokenRequest := jwt.EncodeTokenRequest(s.st.Root.ID, s.st.Root.APISecret.String())
+	u, urlErr := url.Parse(srv.URL + "/token")
+	if urlErr != nil {
+		log.Fatal(urlErr.Error())
+	}
+	tokenRequest := jwt.EncodeTokenRequest(st.Root.ID, st.Root.APISecret.String())
 	req := http.Request{
 		URL:    u,
 		Method: http.MethodPost,
 		Header: map[string][]string{
-			app.IDHeader:           {s.st.Root.ID.String()},
+			app.IDHeader:           {st.Root.ID.String()},
 			app.TokenRequestHeader: {tokenRequest},
 		},
 	}
-	resp, postErr := s.c.Do(&req)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	resp, postErr := c.Do(&req)
+	if postErr != nil {
+		log.Fatal(postErr.Error())
+	}
+	if resp.StatusCode != http.StatusOK {
+		log.Fatal("resp.StatusCode != http.StatusOK")
+	}
 	defer resp.Body.Close()
 	body, readErr := io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	umErr := json.Unmarshal(body, &s.tok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), s.tok.Token)
-
-	tokenRequest = jwt.EncodeTokenRequest(s.owner.ID, s.owner.APISecret.String())
+	if readErr != nil {
+		log.Fatal(readErr.Error())
+	}
+	umErr := json.Unmarshal(body, &tok)
+	if umErr != nil {
+		log.Fatal(umErr.Error())
+	}
+	if len(tok.Token) == 0 {
+		log.Fatal("token empty")
+	}
+	tokenRequest = jwt.EncodeTokenRequest(owner.ID, owner.APISecret.String())
 	req = http.Request{
 		URL:    u,
 		Method: http.MethodPost,
 		Header: map[string][]string{
-			app.IDHeader:           {s.owner.ID.String()},
+			app.IDHeader:           {owner.ID.String()},
 			app.TokenRequestHeader: {tokenRequest},
 		},
 	}
-	resp, postErr = s.c.Do(&req)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	resp, postErr = c.Do(&req)
+	if postErr != nil {
+		log.Fatal(postErr.Error())
+	}
+	if resp.StatusCode != http.StatusOK {
+		log.Fatal("resp.StatusCode != http.StatusOK")
+	}
 	defer resp.Body.Close()
 	body, readErr = io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	umErr = json.Unmarshal(body, &s.ownerTok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), s.ownerTok.Token)
+	if readErr != nil {
+		log.Fatal(readErr.Error())
+	}
+	umErr = json.Unmarshal(body, &ownerTok)
+	if umErr != nil {
+		log.Fatal(umErr.Error())
+	}
+	if len(ownerTok.Token) == 0 {
+		log.Fatal("owner token empty")
+	}
 
-	tokenRequest = jwt.EncodeTokenRequest(s.regularUser.ID, s.regularUser.APISecret.String())
+	tokenRequest = jwt.EncodeTokenRequest(regularUser.ID, regularUser.APISecret.String())
 	req = http.Request{
 		URL:    u,
 		Method: http.MethodPost,
 		Header: map[string][]string{
-			app.IDHeader:           {s.regularUser.ID.String()},
+			app.IDHeader:           {regularUser.ID.String()},
 			app.TokenRequestHeader: {tokenRequest},
 		},
 	}
-	resp, postErr = s.c.Do(&req)
-	require.NoError(s.T(), postErr)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	resp, postErr = c.Do(&req)
+	if postErr != nil {
+		log.Fatal(postErr.Error())
+	}
+	if resp.StatusCode != http.StatusOK {
+		log.Fatal("resp.StatusCode != http.StatusOK")
+	}
 	defer resp.Body.Close()
 	body, readErr = io.ReadAll(resp.Body)
-	require.NoError(s.T(), readErr)
-	umErr = json.Unmarshal(body, &s.regularUserTok)
-	require.NoError(s.T(), umErr)
-	require.NotEmpty(s.T(), s.regularUserTok.Token)
-}
-
-func (s *OrgSuite) TearDownSuite() {
-	s.srv.Close()
-}
-
-func TestOrgSuite(t *testing.T) {
-	suite.Run(t, new(OrgSuite))
+	if readErr != nil {
+		log.Fatal(readErr.Error())
+	}
+	umErr = json.Unmarshal(body, &regularUserTok)
+	if umErr != nil {
+		log.Fatal(umErr.Error())
+	}
+	if len(regularUserTok.Token) == 0 {
+		log.Fatal("regular user token empty")
+	}
 }

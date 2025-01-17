@@ -2,9 +2,10 @@ package client
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"net/http/httptest"
-	"testing"
+	testing_ "testing"
 
 	"github.com/grokloc/grokloc-apiserver/pkg/app"
 	"github.com/grokloc/grokloc-apiserver/pkg/app/admin/org"
@@ -13,80 +14,86 @@ import (
 	"github.com/grokloc/grokloc-apiserver/pkg/app/state/unit"
 	app_testing "github.com/grokloc/grokloc-apiserver/pkg/app/testing"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 )
 
-type ClientSuite struct {
-	suite.Suite
+var (
 	srv                                           *httptest.Server
 	st                                            *app.State
-	org                                           *org.Org
+	o                                             *org.Org
 	orgOwner, regularUser                         *user.User
 	rootClient, orgOwnerClient, regularUserClient *Client
-}
+)
 
-func (s *ClientSuite) SetupSuite() {
-	st, stErr := unit.State()
-	require.NoError(s.T(), stErr)
-	s.st = st
+func TestMain(m *testing_.M) {
+	var stErr error
+	st, stErr = unit.State()
+	if stErr != nil {
+		log.Fatal(stErr.Error())
+	}
+
 	rtr := api.NewRouter(st)
-	s.srv = httptest.NewServer(rtr)
+	srv = httptest.NewServer(rtr)
 	var clientErr error
 	httpClient := http.Client{}
-
-	s.rootClient, clientErr = New(
+	rootClient, clientErr = New(
 		st.Root.ID.String(),
 		st.Root.APISecret.String(),
-		s.srv.URL,
+		srv.URL,
 		st.APIVersion,
 		&httpClient,
 	)
-	require.NoError(s.T(), clientErr)
+	if clientErr != nil {
+		log.Fatal(clientErr.Error())
+	}
 
 	conn, connErr := st.Master.Acquire(context.Background())
-	require.NoError(s.T(), connErr)
+	if connErr != nil {
+		log.Fatal(connErr.Error())
+	}
 	defer conn.Release()
-	o, orgOwner, regularUser, oErr := app_testing.TestOrgAndUser(conn.Conn(), st)
-	require.NoError(s.T(), oErr)
-	s.org = o
-	s.orgOwner = orgOwner
-	s.regularUser = regularUser
+	var oErr error
+	o, orgOwner, regularUser, oErr = app_testing.TestOrgAndUser(conn.Conn(), st)
+	if oErr != nil {
+		log.Fatal(oErr.Error())
+	}
 
-	s.orgOwnerClient, clientErr = New(
+	orgOwnerClient, clientErr = New(
 		orgOwner.ID.String(),
 		orgOwner.APISecret.String(),
-		s.srv.URL,
+		srv.URL,
 		st.APIVersion,
 		&httpClient,
 	)
-	require.NoError(s.T(), clientErr)
+	if clientErr != nil {
+		log.Fatal(clientErr.Error())
+	}
 
-	s.regularUserClient, clientErr = New(
+	regularUserClient, clientErr = New(
 		regularUser.ID.String(),
 		regularUser.APISecret.String(),
-		s.srv.URL,
+		srv.URL,
 		st.APIVersion,
 		&httpClient,
 	)
-	require.NoError(s.T(), clientErr)
+	if clientErr != nil {
+		log.Fatal(clientErr.Error())
+	}
+
+	m.Run()
 }
 
-func (s *ClientSuite) TestOK() {
-	require.NoError(s.T(), s.rootClient.OK())
-	require.NoError(s.T(), s.orgOwnerClient.OK())
-	require.NoError(s.T(), s.regularUserClient.OK())
-}
+func TestClient(t *testing_.T) {
+	t.Run("OK", func(t *testing_.T) {
+		t.Parallel()
+		require.NoError(t, rootClient.OK())
+		require.NoError(t, orgOwnerClient.OK())
+		require.NoError(t, regularUserClient.OK())
+	})
 
-func (s *ClientSuite) TestAuthOK() {
-	require.NoError(s.T(), s.rootClient.AuthOK())
-	require.NoError(s.T(), s.orgOwnerClient.OK())
-	require.NoError(s.T(), s.regularUserClient.OK())
-}
-
-func (s *ClientSuite) TearDownSuite() {
-	s.srv.Close()
-}
-
-func TestClientSuite(t *testing.T) {
-	suite.Run(t, new(ClientSuite))
+	t.Run("AuthOK", func(t *testing_.T) {
+		t.Parallel()
+		require.NoError(t, rootClient.AuthOK())
+		require.NoError(t, orgOwnerClient.AuthOK())
+		require.NoError(t, regularUserClient.AuthOK())
+	})
 }
